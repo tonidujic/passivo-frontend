@@ -78,7 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
         ['decrypt'],
       )
     } catch (err) {
-      console.error('RESTORE SESSION ERROR:', err)
+      console.error('error:', err)
     }
   }
 

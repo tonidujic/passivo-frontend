@@ -1,7 +1,5 @@
 import { base64ToArrayBuffer, arrayBufferToBase64, uint8ArrayToBase64 } from './encoding'
 export async function encryptPrivateKey(privateKey, encryptionKey) {
-  // encryptedPrivateKey + iv
-
   const exportedPrivateKey = await crypto.subtle.exportKey('pkcs8', privateKey)
 
   const iv = crypto.getRandomValues(new Uint8Array(12))
