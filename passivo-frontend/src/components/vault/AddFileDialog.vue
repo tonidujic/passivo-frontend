@@ -52,7 +52,7 @@ const title = ref('')
 const file = ref(null)
 
 function submit() {
-  emit('save', {
+  emit('submit', {
     title: title.value || file.value?.name,
     file: file.value,
   })
