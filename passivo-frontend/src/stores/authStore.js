@@ -30,6 +30,9 @@ export const useAuthStore = defineStore('auth', () => {
   const publicKey = ref(null)
 
   async function restoreCryptoSession() {
+    if (publicKey.value && privateKey.value) {
+      return
+    }
     try {
       const publicKeyBase64 = sessionStorage.getItem('publicKey')
 
