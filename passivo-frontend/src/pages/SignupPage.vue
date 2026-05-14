@@ -85,16 +85,18 @@ const fullName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const terms = ref(true)
+const terms = ref(false)
 const showPassword = ref(false)
 const createAccount = async () => {
-  await auth.signUp({
-    fullName: fullName.value,
-    email: email.value,
-    password: password.value,
-  })
+  if (terms.value) {
+    await auth.signUp({
+      fullName: fullName.value,
+      email: email.value,
+      password: password.value,
+    })
 
-  router.push('/dashboard/vault')
+    router.push('/dashboard/vault')
+  }
 }
 </script>
 
