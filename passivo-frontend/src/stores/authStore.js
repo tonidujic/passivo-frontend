@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { api } from 'boot/axios'
 
 import {
@@ -14,6 +14,8 @@ import {
   importDeviceKey,
   encryptPrivateKeyForDevice,
   decryptPrivateKeyForDevice,
+  encryptData,
+  decryptData,
 } from 'src/utils/crypto/encryption'
 import {
   arrayBufferToBase64,
@@ -29,25 +31,25 @@ export const useAuthStore = defineStore('auth', () => {
   const privateKey = ref(null)
   const publicKey = ref(null)
 
+  const userInitial = computed(() => {
+    return user.value?.fullName?.charAt(0)?.toUpperCase() || ''
+  })
+
   async function restoreCryptoSession() {
     if (publicKey.value && privateKey.value) {
       return
     }
+
     try {
       const publicKeyBase64 = sessionStorage.getItem('publicKey')
 
-      const encryptedPrivateKeyForDevice = sessionStorage.getItem('encryptedPrivateKeyForDevice')
+      const privateKeyForDevice = sessionStorage.getItem('privateKeyForDevice')
 
       const devicePrivateKeyIv = sessionStorage.getItem('devicePrivateKeyIv')
 
       const deviceKeyBase64 = await getDeviceKey()
 
-      if (
-        !publicKeyBase64 ||
-        !encryptedPrivateKeyForDevice ||
-        !devicePrivateKeyIv ||
-        !deviceKeyBase64
-      ) {
+      if (!publicKeyBase64 || !privateKeyForDevice || !devicePrivateKeyIv || !deviceKeyBase64) {
         return
       }
 
@@ -65,7 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
       const deviceKey = await importDeviceKey(deviceKeyBase64)
 
       const decryptedPrivateKey = await decryptPrivateKeyForDevice(
-        encryptedPrivateKeyForDevice,
+        privateKeyForDevice,
         devicePrivateKeyIv,
         deviceKey,
       )
@@ -80,6 +82,15 @@ export const useAuthStore = defineStore('auth', () => {
         true,
         ['decrypt'],
       )
+      const res = await api.get('/api/auth/me')
+      console.log('ME RESPONSE:', res.data)
+      const me = res.data.data.user || res.data.data
+
+      user.value = me
+
+      if (user.value?.fullName) {
+        user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
+      }
     } catch (err) {
       console.error('error:', err)
     }
@@ -92,32 +103,33 @@ export const useAuthStore = defineStore('auth', () => {
       const keyPair = await generateUserKeyPair()
       const exportedPublicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey)
       const rawAuthKey = await exportAuthKey(authKey)
-      const { encryptedPrivateKey, iv } = await encryptPrivateKey(keyPair.privateKey, encryptionKey)
+
+      const { privateKey, iv } = await encryptPrivateKey(keyPair.privateKey, encryptionKey)
+      let fullName = await encryptData(payload.fullName, keyPair.publicKey)
 
       const signUpPayload = {
-        fullName: payload.fullName,
+        fullName: arrayBufferToBase64(fullName),
         email: payload.email,
         salt: uint8ArrayToBase64(salt),
-        authKey: rawAuthKey,
+        payloadAuthKey: rawAuthKey,
         publicKey: arrayBufferToBase64(exportedPublicKey),
-        encryptedPrivateKey: arrayBufferToBase64(encryptedPrivateKey),
+        privateKey: arrayBufferToBase64(privateKey),
         iv: uint8ArrayToBase64(iv),
       }
-
       const res = await api.post('/api/auth/signup', signUpPayload)
-      user.value = res.data.user
+      user.value = res.data.data.user
       privateKey.value = keyPair.privateKey
       publicKey.value = keyPair.publicKey
       const deviceKey = await generateDeviceKey()
       const deviceKeyBase64 = await exportDeviceKey(deviceKey)
-
-      const { encryptedPrivateKeyForDevice, devicePrivateKeyIv } = await encryptPrivateKeyForDevice(
+      user.value.fullName = payload.fullName
+      const { privateKeyForDevice, devicePrivateKeyIv } = await encryptPrivateKeyForDevice(
         privateKey.value,
         deviceKey,
       )
 
       sessionStorage.setItem('publicKey', arrayBufferToBase64(exportedPublicKey))
-      sessionStorage.setItem('encryptedPrivateKeyForDevice', encryptedPrivateKeyForDevice)
+      sessionStorage.setItem('privateKeyForDevice', privateKeyForDevice)
       sessionStorage.setItem('devicePrivateKeyIv', devicePrivateKeyIv)
 
       await saveDeviceKey(deviceKeyBase64)
@@ -163,7 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
           iv: base64ToUint8Array(res.data.data.user.iv),
         },
         encryptionKey,
-        base64ToArrayBuffer(res.data.data.user.encryptedPrivateKey),
+        base64ToArrayBuffer(res.data.data.user.privateKey),
       )
 
       privateKey.value = await crypto.subtle.importKey(
@@ -177,16 +189,18 @@ export const useAuthStore = defineStore('auth', () => {
         ['decrypt'],
       )
 
+      user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
+
       const deviceKey = await generateDeviceKey()
       const deviceKeyBase64 = await exportDeviceKey(deviceKey)
 
-      const { encryptedPrivateKeyForDevice, devicePrivateKeyIv } = await encryptPrivateKeyForDevice(
+      const { privateKeyForDevice, devicePrivateKeyIv } = await encryptPrivateKeyForDevice(
         privateKey.value,
         deviceKey,
       )
 
       sessionStorage.setItem('publicKey', res.data.data.user.publicKey)
-      sessionStorage.setItem('encryptedPrivateKeyForDevice', encryptedPrivateKeyForDevice)
+      sessionStorage.setItem('privateKeyForDevice', privateKeyForDevice)
       sessionStorage.setItem('devicePrivateKeyIv', devicePrivateKeyIv)
 
       await saveDeviceKey(deviceKeyBase64)
@@ -206,5 +220,6 @@ export const useAuthStore = defineStore('auth', () => {
     privateKey,
     publicKey,
     restoreCryptoSession,
+    userInitial,
   }
 })

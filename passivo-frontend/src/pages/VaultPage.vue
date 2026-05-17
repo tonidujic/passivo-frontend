@@ -1,42 +1,70 @@
 <template>
   <q-page class="vault-page">
-    <div class="topbar">
-      <div>
+    <div class="hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <q-icon name="lock" />
+          End-to-end encrypted
+        </div>
+
         <h1>Vault</h1>
-        <p>Manage your saved passwords and encrypted files</p>
+
+        <p>Manage your saved passwords, private notes, and encrypted files in one secure place.</p>
       </div>
 
-      <q-btn unelevated icon="add" label="New item" class="add-btn">
-        <q-menu class="new-item-menu">
-          <q-list>
-            <q-item clickable v-close-popup @click="passwordDialog = true" class="menu-item">
-              <q-item-section avatar>
-                <div class="icon-box">
-                  <q-icon name="vpn_key" />
-                </div>
-              </q-item-section>
+      <div class="hero-right">
+        <div class="hero-card">
+          <div>
+            <strong>{{ vault.items.length }}</strong>
+            <span>secured items</span>
+          </div>
+        </div>
 
-              <q-item-section>
-                <div class="title">Password</div>
-                <div class="subtitle">Save login credentials</div>
-              </q-item-section>
-            </q-item>
+        <q-btn unelevated icon="add" label="New item" class="add-btn">
+          <q-menu anchor="bottom right" self="top right" class="new-item-menu">
+            <q-list>
+              <q-item clickable v-close-popup @click="passwordDialog = true" class="menu-item">
+                <q-item-section avatar>
+                  <div class="icon-box">
+                    <q-icon name="vpn_key" />
+                  </div>
+                </q-item-section>
 
-            <q-item clickable v-close-popup @click="fileDialog = true" class="menu-item">
-              <q-item-section avatar>
-                <div class="icon-box file">
-                  <q-icon name="upload_file" />
-                </div>
-              </q-item-section>
+                <q-item-section>
+                  <div class="title">Password</div>
+                  <div class="subtitle">Save login credentials</div>
+                </q-item-section>
+              </q-item>
 
-              <q-item-section>
-                <div class="title">File</div>
-                <div class="subtitle">Upload encrypted file</div>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </q-btn>
+              <q-item clickable v-close-popup @click="fileDialog = true" class="menu-item">
+                <q-item-section avatar>
+                  <div class="icon-box file">
+                    <q-icon name="upload_file" />
+                  </div>
+                </q-item-section>
+
+                <q-item-section>
+                  <div class="title">File</div>
+                  <div class="subtitle">Upload encrypted file</div>
+                </q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="notesDialog = true" class="menu-item">
+                <q-item-section avatar>
+                  <div class="icon-box file">
+                    <q-icon name="notes" />
+                  </div>
+                </q-item-section>
+
+                <q-item-section>
+                  <div class="title">Notes</div>
+                  <div class="subtitle">Write encrypted notes</div>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+      </div>
     </div>
 
     <q-input outlined v-model="vault.search" placeholder="Search anything..." class="search-input">
@@ -46,29 +74,21 @@
     </q-input>
 
     <div class="items">
-      <q-card v-for="item in vault.filteredItems" :key="item.id" class="vault-item">
-        <div class="app-icon">
-          <q-icon v-if="item.type === 'file'" name="description" />
-          <span v-else>{{ item.icon }}</span>
-        </div>
-
-        <div class="item-info">
-          <strong>{{ item.title }}</strong>
-          <p>{{ item.subtitle }}</p>
-        </div>
-
-        <q-icon
-          v-if="item.type === 'password'"
-          :name="item.favorite ? 'star' : 'star_border'"
-          class="favorite"
-        />
-
-        <q-btn flat round dense icon="more_vert" @click="showPassword(item)" />
-      </q-card>
+      <VaultItem
+        v-for="item in vault.filteredItems"
+        :key="item.id"
+        :item="item"
+        @click-more="handleMore(item)"
+        @toggle-favorite="vault.toggleFavorite"
+      />
     </div>
 
     <AddPasswordDialog v-model="passwordDialog" @submit="vault.addPasswordItem" />
+
     <AddFileDialog v-model="fileDialog" @submit="vault.addFileItem" />
+
+    <AddNoteDialog v-model="notesDialog" @submit="vault.addNoteItem" />
+
     <q-dialog v-model="revealDialog">
       <q-card class="reveal-card">
         <div class="reveal-icon">
@@ -76,6 +96,7 @@
         </div>
 
         <h2>Saved password</h2>
+
         <p class="reveal-subtitle">Your decrypted password is shown below.</p>
 
         <div class="password-box">
@@ -87,142 +108,217 @@
         <q-btn unelevated label="Close" class="close-btn" v-close-popup />
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="filePreviewDialog">
+      <q-card class="file-preview-card">
+        <img
+          v-if="filePreviewType?.startsWith('image/')"
+          :src="filePreviewUrl"
+          class="file-preview-image"
+        />
+
+        <iframe
+          v-else-if="filePreviewType === 'application/pdf'"
+          :src="filePreviewUrl"
+          class="file-preview-pdf"
+        />
+
+        <div v-else class="file-preview-empty">Preview not available</div>
+
+        <q-btn unelevated label="Close" class="close-btn" v-close-popup />
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="noteDialog">
+      <q-card class="note-preview-card">
+        <div class="note-header">
+          <q-icon name="sticky_note_2" />
+
+          <h2>Secure note</h2>
+        </div>
+
+        <q-editor v-model="revealedNote" readonly min-height="300px" class="note-editor" />
+
+        <q-btn unelevated label="Close" class="close-btn" v-close-popup />
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+
 import { useVaultStore } from 'src/stores/vaultStore'
-import { onMounted, ref } from 'vue'
 import { useAuthStore } from 'src/stores/authStore'
+
+import VaultItem from 'components/vault/VaultItem.vue'
+import AddPasswordDialog from 'components/vault/AddPasswordDialog.vue'
+import AddFileDialog from 'components/vault/AddFileDialog.vue'
+import AddNoteDialog from 'components/vault/AddNoteDialog.vue'
+
 const auth = useAuthStore()
 const vault = useVaultStore()
 
-import AddPasswordDialog from 'components/vault/AddPasswordDialog.vue'
-import AddFileDialog from 'components/vault/AddFileDialog.vue'
-
 const passwordDialog = ref(false)
 const fileDialog = ref(false)
-
-const revealedPassword = ref('')
+const notesDialog = ref(false)
 
 const revealDialog = ref(false)
+const revealedPassword = ref('')
+
+const filePreviewDialog = ref(false)
+const filePreviewUrl = ref('')
+const filePreviewType = ref('')
+
+const noteDialog = ref(false)
+const revealedNote = ref('')
+
+async function showFile(item) {
+  if (item.type !== 'file') return
+
+  filePreviewUrl.value = await vault.fetchFile(item)
+  filePreviewType.value = item.fileType
+  filePreviewDialog.value = true
+}
 
 async function showPassword(item) {
+  if (item.type !== 'password') return
+
   const decrypted = await vault.revealCredential(item)
 
   revealedPassword.value = decrypted.replace(/^"|"$/g, '')
+
   revealDialog.value = true
 }
-async function copyPassword() {
-  const cleanPassword = revealedPassword.value.replace(/^"|"$/g, '')
 
-  await navigator.clipboard.writeText(cleanPassword)
+function showNote(item) {
+  if (item.type !== 'note') return
+
+  revealedNote.value = item.content
+
+  noteDialog.value = true
+}
+
+async function handleMore(item) {
+  if (item.type === 'password') {
+    await showPassword(item)
+  }
+
+  if (item.type === 'file') {
+    await showFile(item)
+  }
+
+  if (item.type === 'note') {
+    showNote(item)
+  }
+}
+
+async function copyPassword() {
+  await navigator.clipboard.writeText(revealedPassword.value)
 }
 
 onMounted(async () => {
   await auth.restoreCryptoSession()
-
   await vault.fetchPasswords()
+  await vault.fetchFiles()
 })
 </script>
 
 <style scoped>
 .vault-page {
-  padding: 48px;
+  padding: 32px;
   min-height: 100vh;
-  background: radial-gradient(circle at 90% 10%, rgba(47, 143, 47, 0.12), transparent 25%), #f6f8f6;
+  background: radial-gradient(circle at 90% 10%, rgba(47, 143, 47, 0.08), transparent 25%), #f6f8f6;
 }
 
-.topbar {
+.hero {
+  max-width: 760px;
+  min-height: 170px;
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  border-radius: 26px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(47, 143, 47, 0.08), rgba(255, 255, 255, 0.94));
+  box-shadow: 0 12px 30px rgba(24, 42, 31, 0.05);
 }
 
-h1 {
+.hero-content {
+  flex: 1;
+}
+
+.hero-badge {
+  width: fit-content;
+  padding: 5px 12px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: rgba(47, 143, 47, 0.12);
+  color: #2f8f2f;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero h1 {
   margin: 0;
-  font-size: 38px;
+  font-size: 34px;
   font-weight: 900;
-  color: #17201a;
+  color: #142018;
 }
 
-p {
-  margin: 6px 0 0;
-  color: #6c766f;
+.hero p {
+  margin-top: 10px;
+  max-width: 360px;
+  color: #66746b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hero-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-card {
+  min-width: 125px;
+  padding: 14px 18px;
+  border-radius: 20px;
+  background: white;
+  text-align: center;
+}
+
+.hero-card strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 950;
+  color: #142018;
+}
+
+.hero-card span {
+  font-size: 13px;
+  font-weight: 800;
+  color: #66746b;
 }
 
 .add-btn {
-  height: 48px;
-  padding: 0 22px;
-  border-radius: 12px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
   background: #2f8f2f;
   color: white;
-  font-weight: 700;
-}
-.new-item-menu {
-  width: 290px;
-  padding: 12px;
-  border-radius: 32px;
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 22px 70px rgba(24, 42, 31, 0.12);
-  border: 1px solid rgba(47, 143, 47, 0.08);
-}
-
-.menu-item {
-  min-height: 82px;
-  padding: 12px;
-  border-radius: 26px;
-  transition: all 0.2s ease;
-  margin-bottom: 8px;
-}
-
-.menu-item:last-child {
-  margin-bottom: 0;
-}
-
-.menu-item:hover {
-  background: rgba(47, 143, 47, 0.07);
-  transform: scale(1.015);
-}
-
-.icon-box {
-  width: 56px;
-  height: 56px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(47, 143, 47, 0.15), rgba(47, 143, 47, 0.07));
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  color: #2f8f2f;
-  font-size: 24px;
-}
-
-.icon-box.file {
-  background: linear-gradient(135deg, rgba(47, 143, 47, 0.12), rgba(47, 143, 47, 0.05));
-}
-
-.title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #17201a;
-  margin-bottom: 2px;
-}
-
-.subtitle {
   font-size: 13px;
-  line-height: 1.35;
-  color: #7b847d;
+  font-weight: 800;
 }
 
 .search-input {
   max-width: 620px;
   margin-bottom: 24px;
   background: white;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .items {
@@ -232,47 +328,54 @@ p {
   gap: 14px;
 }
 
-.vault-item {
-  height: 78px;
-  padding: 0 20px;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 12px 30px rgba(24, 42, 31, 0.06);
+.new-item-menu {
+  width: 290px;
+  padding: 12px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 22px 70px rgba(24, 42, 31, 0.16);
 }
 
-.app-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #eef4ef;
+.menu-item {
+  min-height: 76px;
+  padding: 12px;
+  border-radius: 18px;
+  margin-bottom: 8px;
+  transition: 0.2s ease;
+}
+
+.menu-item:last-child {
+  margin-bottom: 0;
+}
+
+.menu-item:hover {
+  background: rgba(47, 143, 47, 0.08);
+}
+
+.icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: rgba(47, 143, 47, 0.12);
   color: #2f8f2f;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-size: 20px;
 }
 
-.item-info {
-  flex: 1;
-}
-
-.item-info strong {
-  font-size: 17px;
+.title {
+  font-size: 15px;
+  font-weight: 800;
   color: #17201a;
 }
 
-.item-info p {
-  margin: 2px 0 0;
-  font-size: 14px;
+.subtitle {
+  font-size: 12px;
+  color: #7b847d;
 }
 
-.favorite {
-  font-size: 24px;
-  color: #2f8f2f;
-}
 .reveal-card {
   width: 380px;
   padding: 28px;
@@ -330,5 +433,62 @@ p {
   background: #2f8f2f;
   color: white;
   font-weight: 800;
+}
+
+.file-preview-card {
+  width: 900px;
+  max-width: 95vw;
+  padding: 20px;
+  border-radius: 24px;
+  background: white;
+}
+
+.file-preview-image {
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 16px;
+}
+
+.file-preview-pdf {
+  width: 100%;
+  height: 75vh;
+  border: 0;
+  border-radius: 16px;
+}
+
+.file-preview-empty {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #66746b;
+  font-weight: 800;
+}
+
+.note-preview-card {
+  width: 850px;
+  max-width: 95vw;
+  padding: 24px;
+  border-radius: 24px;
+}
+
+.note-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  color: #2f8f2f;
+}
+
+.note-header h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.note-editor {
+  border-radius: 16px;
+  overflow: hidden;
 }
 </style>

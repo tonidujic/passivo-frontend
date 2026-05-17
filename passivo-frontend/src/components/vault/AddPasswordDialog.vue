@@ -77,6 +77,7 @@ const form = ref({
   website: '',
   username: '',
   password: '',
+  favorite: '',
 })
 
 async function submit() {

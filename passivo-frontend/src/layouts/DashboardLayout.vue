@@ -1,8 +1,3 @@
-<script setup>
-function logout() {
-  console.log('logout clicked')
-}
-</script>
 <template>
   <q-layout view="lHh Lpr lFf" class="dashboard-layout">
     <q-drawer show-if-above bordered :width="260" class="sidebar">
@@ -55,6 +50,16 @@ function logout() {
       </q-list>
 
       <q-btn flat icon="logout" label="Log out" class="logout-btn" @click="logout" />
+
+      <div class="profile-section">
+        <q-avatar class="profile-avatar" size="36px" color="green" text-color="white">
+          {{ auth.userInitial }}
+        </q-avatar>
+
+        <div class="profile-info">
+          <strong>{{ auth.user?.fullName }}</strong>
+        </div>
+      </div>
     </q-drawer>
 
     <q-page-container>
@@ -62,6 +67,11 @@ function logout() {
     </q-page-container>
   </q-layout>
 </template>
+<script setup>
+import { useAuthStore } from 'src/stores/authStore'
+
+const auth = useAuthStore()
+</script>
 
 <style scoped>
 .dashboard-layout {
@@ -108,5 +118,34 @@ function logout() {
 }
 .logout-btn:hover {
   color: red;
+}
+
+.profile-section {
+  position: absolute;
+  bottom: 100px;
+  left: 24px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar {
+  font-weight: 800;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-info strong {
+  font-size: 15px;
+  color: #17201a;
+}
+
+.profile-info span {
+  font-size: 12px;
+  color: #7b847d;
 }
 </style>

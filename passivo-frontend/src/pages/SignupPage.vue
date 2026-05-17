@@ -87,6 +87,7 @@ const password = ref('')
 const confirmPassword = ref('')
 const terms = ref(false)
 const showPassword = ref(false)
+
 const createAccount = async () => {
   if (terms.value) {
     await auth.signUp({

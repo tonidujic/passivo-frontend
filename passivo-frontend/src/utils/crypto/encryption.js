@@ -1,10 +1,10 @@
 import { base64ToArrayBuffer, arrayBufferToBase64, uint8ArrayToBase64 } from './encoding'
-export async function encryptPrivateKey(privateKey, encryptionKey) {
-  const exportedPrivateKey = await crypto.subtle.exportKey('pkcs8', privateKey)
+export async function encryptPrivateKey(privKey, encryptionKey) {
+  const exportedPrivateKey = await crypto.subtle.exportKey('pkcs8', privKey)
 
   const iv = crypto.getRandomValues(new Uint8Array(12))
 
-  const encryptedPrivateKey = await crypto.subtle.encrypt(
+  const privateKey = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
       iv,
@@ -13,12 +13,12 @@ export async function encryptPrivateKey(privateKey, encryptionKey) {
     exportedPrivateKey,
   )
 
-  return { encryptedPrivateKey, iv }
+  return { privateKey, iv }
 }
 
-export async function encryptCredential(credential, publicKey) {
-  const encodedCredential = new TextEncoder().encode(credential)
-  const encryptedCredential = await crypto.subtle.encrypt(
+export async function encryptCredential(cred, publicKey) {
+  const encodedCredential = new TextEncoder().encode(cred)
+  const credential = await crypto.subtle.encrypt(
     {
       name: 'RSA-OAEP',
     },
@@ -26,7 +26,7 @@ export async function encryptCredential(credential, publicKey) {
     encodedCredential,
   )
 
-  return encryptedCredential
+  return credential
 }
 
 export async function decryptCredential(encryptedCredential, privateKey) {
@@ -73,7 +73,7 @@ export async function encryptPrivateKeyForDevice(privateKey, deviceKey) {
   )
 
   return {
-    encryptedPrivateKeyForDevice: arrayBufferToBase64(encrypted),
+    privateKeyForDevice: arrayBufferToBase64(encrypted),
 
     devicePrivateKeyIv: uint8ArrayToBase64(iv),
   }
@@ -104,4 +104,53 @@ export async function decryptPrivateKeyForDevice(encryptedPrivateKeyForDevice, i
 
     base64ToArrayBuffer(encryptedPrivateKeyForDevice),
   )
+}
+
+export async function encryptData(value, publicKey) {
+  const encodedValue = new TextEncoder().encode(value)
+  return await crypto.subtle.encrypt(
+    {
+      name: 'RSA-OAEP',
+    },
+    publicKey,
+    encodedValue,
+  )
+}
+
+export async function decryptData(value, privateKey) {
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: 'RSA-OAEP',
+    },
+    privateKey,
+    base64ToArrayBuffer(value),
+  )
+  return new TextDecoder().decode(decrypted)
+}
+
+export async function encryptAESKey(value, publicKey) {
+  const key = await crypto.subtle.exportKey('raw', value)
+
+  return await crypto.subtle.encrypt(
+    {
+      name: 'RSA-OAEP',
+    },
+    publicKey,
+    key,
+  )
+}
+
+export async function encryptFile(value, key) {
+  const fileBuffer = await value.arrayBuffer()
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+
+  const file = await crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv,
+    },
+    key,
+    fileBuffer,
+  )
+  return { file, iv }
 }

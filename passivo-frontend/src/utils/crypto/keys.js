@@ -1,7 +1,6 @@
 import { arrayBufferToBase64 } from './encoding'
 
 export async function deriveAuthAndEncryptionKeys(password, salt) {
-  // password + salt → authKey + encryptionKey
   const enc = new TextEncoder()
   const passwordBytes = enc.encode(password)
 
@@ -71,4 +70,13 @@ export async function exportAuthKey(authKey) {
   const rawAuthKey = await crypto.subtle.exportKey('raw', authKey)
 
   return arrayBufferToBase64(rawAuthKey)
+}
+
+export async function generateKey() {
+  const key = crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+    'encrypt',
+    'decrypt',
+  ])
+
+  return key
 }
