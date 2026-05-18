@@ -191,7 +191,7 @@ async function showPassword(item) {
   revealDialog.value = true
 }
 
-function showNote(item) {
+async function showNote(item) {
   if (item.type !== 'note') return
 
   revealedNote.value = item.content
@@ -209,7 +209,7 @@ async function handleMore(item) {
   }
 
   if (item.type === 'note') {
-    showNote(item)
+    await showNote(item)
   }
 }
 
@@ -221,6 +221,7 @@ onMounted(async () => {
   await auth.restoreCryptoSession()
   await vault.fetchPasswords()
   await vault.fetchFiles()
+  await vault.fetchNotes()
 })
 </script>
 

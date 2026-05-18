@@ -83,8 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
         ['decrypt'],
       )
       const res = await api.get('/api/auth/me')
-      console.log('ME RESPONSE:', res.data)
-      const me = res.data.data.user || res.data.data
+      const me = res.data.data.user
 
       user.value = me
 

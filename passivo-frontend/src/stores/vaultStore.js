@@ -37,9 +37,9 @@ export const useVaultStore = defineStore('vault', () => {
     await auth.restoreCryptoSession()
 
     const res = await api.get('/api/password')
-
+    const result = res.data.data.result || res.data.data || []
     const passwords = await Promise.all(
-      res.data.data.result.map(async (item) => {
+      result.map(async (item) => {
         const title = await decryptData(item.title, auth.privateKey)
         const website = await decryptData(item.website, auth.privateKey)
         const username = await decryptData(item.username, auth.privateKey)
@@ -212,11 +212,46 @@ export const useVaultStore = defineStore('vault', () => {
     })
   }
 
-  function addNoteItem(payload) {
+  async function fetchNotes() {
+    await auth.restoreCryptoSession()
+
+    const res = await api.get('/api/notes')
+
+    const notes = await Promise.all(
+      res.data.data.result.map(async (item) => {
+        const title = await decryptData(item.title, auth.privateKey)
+        const note = await decryptData(item.content, auth.privateKey)
+
+        return {
+          id: item.id,
+          type: 'note',
+          title,
+          icon: 'sticky_note_2',
+          subtitle: note.replace(/<[^>]*>/g, '').slice(0, 80),
+          favorite: false,
+          content: note,
+        }
+      }),
+    )
+
+    items.value = [...items.value, ...notes]
+  }
+
+  async function addNoteItem(payload) {
+    await auth.restoreCryptoSession()
+
+    const note = await encryptData(payload.content, auth.publicKey)
+    const title = await encryptData(payload.title, auth.publicKey)
+
+    await api.post('/api/notes', {
+      title: arrayBufferToBase64(title),
+      content: arrayBufferToBase64(note),
+    })
+
     items.value.unshift({
       id: Date.now(),
       type: 'note',
-      title: payload.title || 'Encrypted note',
+      title: payload.title,
       subtitle: 'Secure note',
       icon: 'sticky_note_2',
       content: payload.content,
@@ -243,6 +278,7 @@ export const useVaultStore = defineStore('vault', () => {
     fetchPasswords,
     fetchFiles,
     fetchFile,
+    fetchNotes,
     revealCredential,
     addPasswordItem,
     addFileItem,
