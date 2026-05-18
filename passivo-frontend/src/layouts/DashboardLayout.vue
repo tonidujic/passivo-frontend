@@ -71,6 +71,15 @@
 import { useAuthStore } from 'src/stores/authStore'
 
 const auth = useAuthStore()
+import { api } from 'boot/axios'
+import { useRouter } from 'vue-router'
+const router = useRouter()
+
+async function logout() {
+  await api.post('/api/auth/logout')
+  await auth.clearSession()
+  router.push('/auth/login')
+}
 </script>
 
 <style scoped>

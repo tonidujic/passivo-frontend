@@ -24,7 +24,7 @@ import {
   base64ToArrayBuffer,
 } from 'src/utils/crypto/encoding'
 
-import { saveDeviceKey, getDeviceKey } from 'src/utils/crypto/deviceStorage'
+import { saveDeviceKey, getDeviceKey, removeDeviceKey } from 'src/utils/crypto/deviceStorage'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -211,6 +211,16 @@ export const useAuthStore = defineStore('auth', () => {
       throw err
     }
   }
+  async function clearSession() {
+    user.value = null
+    privateKey.value = null
+    publicKey.value = null
+    sessionStorage.removeItem('privateKeyForDevice')
+    sessionStorage.removeItem('publicKey')
+
+    sessionStorage.removeItem('devicePrivateKeyIv')
+    await removeDeviceKey()
+  }
 
   return {
     signUp,
@@ -220,5 +230,6 @@ export const useAuthStore = defineStore('auth', () => {
     publicKey,
     restoreCryptoSession,
     userInitial,
+    clearSession,
   }
 })

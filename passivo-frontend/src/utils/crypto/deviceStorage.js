@@ -39,3 +39,18 @@ export async function getDeviceKey() {
     request.onerror = () => reject(request.error)
   })
 }
+export async function removeDeviceKey() {
+  const db = await openDB()
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+
+    const store = tx.objectStore(STORE_NAME)
+
+    const request = store.delete('deviceKey')
+
+    request.onsuccess = () => resolve()
+
+    request.onerror = () => reject(request.error)
+  })
+}
