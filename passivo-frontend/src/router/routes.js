@@ -7,6 +7,26 @@ const routes = [
         path: '',
         component: () => import('pages/LandingPage.vue'),
       },
+      {
+        path: 'features',
+        component: () => import('pages/FeaturesPage.vue'),
+      },
+      {
+        path: 'security',
+        component: () => import('pages/SecurityPage.vue'),
+      },
+      {
+        path: 'pricing',
+        component: () => import('pages/PricingPage.vue'),
+      },
+      {
+        path: 'faq',
+        component: () => import('pages/FAQPage.vue'),
+      },
+      {
+        path: 'contact',
+        component: () => import('pages/ContactPage.vue'),
+      },
     ],
   },
 

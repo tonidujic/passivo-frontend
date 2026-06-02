@@ -132,6 +132,7 @@ export const useAuthStore = defineStore('auth', () => {
       sessionStorage.setItem('devicePrivateKeyIv', devicePrivateKeyIv)
 
       await saveDeviceKey(deviceKeyBase64)
+      await autoLock()
     } catch (err) {
       console.error('STATUS:', err.response?.status)
 
@@ -203,6 +204,7 @@ export const useAuthStore = defineStore('auth', () => {
       sessionStorage.setItem('devicePrivateKeyIv', devicePrivateKeyIv)
 
       await saveDeviceKey(deviceKeyBase64)
+      await autoLock()
 
       return res.data
     } catch (err) {
@@ -211,6 +213,7 @@ export const useAuthStore = defineStore('auth', () => {
       throw err
     }
   }
+
   async function clearSession() {
     user.value = null
     privateKey.value = null
@@ -222,6 +225,31 @@ export const useAuthStore = defineStore('auth', () => {
     await removeDeviceKey()
   }
 
+  async function logout() {
+    await api.post('/api/auth/logout')
+    await clearSession()
+  }
+
+  let autoLockInterval = null
+  async function autoLock() {
+    await resetTimer()
+    window.addEventListener('mousemove', resetTimer)
+    window.addEventListener('click', resetTimer)
+    window.addEventListener('scroll', resetTimer)
+    window.addEventListener('keydown', resetTimer)
+  }
+
+  async function resetTimer() {
+    clearTimeout(autoLockInterval)
+
+    autoLockInterval = setTimeout(
+      async () => {
+        await clearSession()
+      },
+      30 * 60 * 1000,
+    )
+  }
+
   return {
     signUp,
     logIn,
@@ -230,6 +258,7 @@ export const useAuthStore = defineStore('auth', () => {
     publicKey,
     restoreCryptoSession,
     userInitial,
+    logout,
     clearSession,
   }
 })
