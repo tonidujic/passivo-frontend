@@ -24,3 +24,477 @@ body {
 .text-brand-secondary {
   color: var(--q-secondary);
 }
+
+/* Menus are teleported outside scoped layout markup. */
+.mobile-public-menu {
+  width: min(300px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: 0 20px 55px rgba(15, 23, 42, 0.18);
+}
+
+.mobile-public-menu .q-item {
+  min-height: 48px;
+  margin: 2px 0;
+  border-radius: 13px;
+  font-weight: 800;
+}
+
+.mobile-public-menu .q-item__section--avatar {
+  min-width: 38px;
+  color: var(--q-primary);
+}
+
+@media (max-width: 600px) {
+  html,
+  body,
+  #q-app {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  button,
+  a,
+  .q-btn,
+  .q-item {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Authentication */
+  .auth-page .brand-side {
+    padding: 22px 18px 8px;
+  }
+
+  .auth-page .brand-logo {
+    height: 62px;
+    margin-bottom: 6px;
+  }
+
+  .auth-page .brand-logo-image {
+    width: 175px;
+    height: 60px;
+  }
+
+  .auth-page .brand-content h1 {
+    font-size: clamp(30px, 9vw, 38px);
+    line-height: 1.02;
+    letter-spacing: -1.5px;
+  }
+
+  .auth-page .brand-content > p {
+    margin-top: 14px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .auth-page .form-side {
+    padding: 12px 12px 32px;
+  }
+
+  .auth-page .router-wrapper,
+  .auth-page .auth-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .auth-page .auth-card {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+
+  .auth-page .auth-header {
+    padding: 10px 10px 6px;
+  }
+
+  .auth-page .auth-header h1 {
+    font-size: 27px;
+  }
+
+  .auth-page .auth-header p {
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  .auth-page .q-card__section {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .auth-page .switch {
+    margin-top: 20px;
+  }
+
+  /* Marketing pages */
+  .landing-page .hero {
+    min-height: calc(100svh - 74px);
+    padding: 42px 18px 56px;
+    align-content: center;
+  }
+
+  .landing-page .hero-left h1 {
+    font-size: clamp(45px, 14vw, 58px);
+    line-height: 0.98;
+    letter-spacing: -2.5px;
+  }
+
+  .landing-page .hero-left p {
+    margin-top: 24px;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .landing-page .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .landing-page .hero-actions .q-btn {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .landing-page .features-row {
+    margin-top: 28px;
+    gap: 10px;
+  }
+
+  .features-page,
+  .security-page,
+  .contact-page,
+  .page {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .features-page .hero,
+  .security-page .hero,
+  .contact-page .hero,
+  .page .container {
+    padding-top: 42px !important;
+    padding-bottom: 48px !important;
+  }
+
+  .features-page .hero h1,
+  .security-page .hero h1,
+  .contact-page .hero h1,
+  .page .container > h1 {
+    font-size: clamp(34px, 10vw, 44px) !important;
+    line-height: 1.05 !important;
+    letter-spacing: -1.5px !important;
+  }
+
+  .features-page .hero p,
+  .security-page .hero p,
+  .contact-page .hero p,
+  .page .intro,
+  .page .hero-text {
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+  }
+
+  .features-page .cards,
+  .security-page .cards {
+    gap: 14px;
+  }
+
+  .features-page .info-card,
+  .security-page .security-card,
+  .contact-page .contact-card,
+  .page .pricing-card,
+  .page .faq {
+    width: 100% !important;
+    padding: 20px !important;
+    border-radius: 22px !important;
+  }
+
+  .contact-page .contact-item {
+    align-items: flex-start;
+    padding: 16px 0;
+    gap: 13px;
+  }
+
+  .contact-page .contact-item a,
+  .contact-page .contact-item p {
+    overflow-wrap: anywhere;
+  }
+
+  .error-page {
+    padding: 16px;
+  }
+
+  .error-page .error-card {
+    padding: 28px 18px;
+    border-radius: 24px;
+  }
+
+  /* Vault */
+  .vault-page {
+    padding: 14px 12px 24px !important;
+  }
+
+  .vault-page .hero {
+    min-height: 0;
+    padding: 18px;
+    margin-bottom: 14px;
+    border-radius: 22px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .vault-page .hero h1 {
+    font-size: 30px;
+  }
+
+  .vault-page .hero p {
+    margin-bottom: 0;
+  }
+
+  .vault-page .hero-right {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .vault-page .hero-card {
+    min-width: 92px;
+    padding: 9px 12px;
+  }
+
+  .vault-page .hero-card strong {
+    font-size: 24px;
+  }
+
+  .vault-page .add-btn {
+    height: auto;
+    min-height: 48px;
+    padding: 0 16px;
+    flex: 1;
+  }
+
+  .vault-page .search-input {
+    margin-bottom: 12px;
+  }
+
+  .vault-page .type-tabs {
+    margin: 0 -12px 18px;
+    padding: 0 12px 3px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .vault-page .type-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vault-page .type-tab {
+    height: 40px;
+    padding: 0 14px;
+    flex: 0 0 auto;
+  }
+
+  .vault-page .items {
+    gap: 10px;
+  }
+
+  .vault-page .reveal-card,
+  .vault-page .file-preview-card,
+  .vault-page .note-preview-card {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .vault-page .file-preview-pdf {
+    height: 65svh;
+  }
+
+  /* Settings */
+  .settings-page {
+    padding: 14px 12px 30px !important;
+  }
+
+  .settings-page .settings-wrapper {
+    width: 100%;
+    padding-bottom: 20px;
+  }
+
+  .settings-page .appearance-card,
+  .settings-page .profile-card,
+  .settings-page .password-card {
+    border-radius: 20px;
+  }
+
+  .settings-page .q-card__section,
+  .settings-page .profile-header,
+  .settings-page .profile-content,
+  .settings-page .password-header,
+  .settings-page .password-content {
+    padding: 18px;
+  }
+
+  .settings-page .section-title {
+    font-size: 27px;
+  }
+
+  .settings-page .theme-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .settings-page .profile-header-left,
+  .settings-page .password-header-left {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .settings-page .profile-icon,
+  .settings-page .security-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    font-size: 23px;
+  }
+
+  .settings-page .profile-title,
+  .settings-page .password-title {
+    font-size: 21px;
+  }
+
+  .settings-page .profile-picture-area {
+    padding: 16px;
+    gap: 18px;
+  }
+
+  .settings-page .profile-preview-wrapper {
+    width: 100%;
+    gap: 14px;
+  }
+
+  .settings-page .step-header {
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .settings-page .requirements-card {
+    padding: 15px;
+  }
+
+  /* Vault cards and dialogs */
+  .vault-item {
+    min-height: 86px !important;
+    padding: 12px !important;
+    gap: 11px !important;
+    border-radius: 20px !important;
+  }
+
+  .vault-item .app-icon {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 15px !important;
+  }
+
+  .vault-item .item-info strong {
+    font-size: 14px !important;
+  }
+
+  .vault-item .item-info p {
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vault-item .item-actions {
+    gap: 0 !important;
+  }
+
+  .vault-item .favorite-btn {
+    display: none;
+  }
+
+  .q-dialog .dialog-card {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100svh - 20px);
+    padding: 10px !important;
+    border-radius: 22px !important;
+    overflow-y: auto;
+  }
+
+  .q-dialog .dialog-header {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 10px 8px;
+  }
+
+  .q-dialog .dialog-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    font-size: 23px;
+  }
+
+  .q-dialog .dialog-header h2 {
+    font-size: 24px;
+  }
+
+  .q-dialog .dialog-header p {
+    margin-top: 3px;
+    font-size: 13px;
+  }
+
+  .q-dialog .dialog-content {
+    padding: 10px;
+  }
+
+  .q-dialog .security-info,
+  .q-dialog .file-info {
+    align-items: flex-start;
+    padding: 13px;
+  }
+
+  .q-dialog .editor {
+    min-height: 210px !important;
+  }
+
+  .q-dialog .editor .q-editor__toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .new-item-menu,
+  .vault-menu {
+    width: calc(100vw - 24px) !important;
+    max-width: 330px;
+  }
+}
+
+@media (max-width: 380px) {
+  .navbar .navbar-logo-wrapper {
+    width: 126px;
+  }
+
+  .navbar .navbar-logo {
+    width: 125px;
+  }
+
+  .navbar .signup-btn {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .vault-page .hero-right {
+    flex-direction: column;
+  }
+
+  .settings-page .profile-preview-wrapper {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

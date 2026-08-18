@@ -167,6 +167,25 @@
     <q-page-container class="dashboard-content">
       <router-view />
     </q-page-container>
+
+    <q-footer class="mobile-dashboard-nav">
+      <q-tabs dense no-caps indicator-color="transparent" active-color="primary">
+        <q-route-tab
+          to="/dashboard/vault"
+          icon="lock"
+          label="Vault"
+          @click="selectType('all')"
+        />
+        <q-route-tab
+          to="/dashboard/vault"
+          icon="star_border"
+          label="Favorites"
+          @click="selectType('favorite')"
+        />
+        <q-route-tab to="/dashboard/settings" icon="settings" label="Settings" />
+        <q-tab icon="logout" label="Log out" @click="logout" />
+      </q-tabs>
+    </q-footer>
   </q-layout>
 </template>
 
@@ -273,6 +292,33 @@ function selectType(type) {
   min-height: 100vh;
 
   transition: background 0.25s ease;
+}
+
+.mobile-dashboard-nav {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .mobile-dashboard-nav {
+    display: block;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+    color: var(--app-text);
+    border-top: 1px solid var(--app-border);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 -10px 35px color-mix(in srgb, var(--q-primary) 8%, transparent);
+  }
+
+  .mobile-dashboard-nav :deep(.q-tab) {
+    min-height: 62px;
+    padding: 6px 2px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .mobile-dashboard-nav :deep(.q-tab__icon) {
+    font-size: 22px;
+  }
 }
 
 .sidebar {

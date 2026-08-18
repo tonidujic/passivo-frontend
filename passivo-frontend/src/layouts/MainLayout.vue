@@ -20,6 +20,38 @@
           <router-link to="/contact"> Contact </router-link>
         </nav>
 
+        <q-btn flat round dense icon="menu" aria-label="Open navigation" class="mobile-menu-btn">
+          <q-menu anchor="bottom right" self="top right" class="mobile-public-menu">
+            <q-list>
+              <q-item clickable v-close-popup to="/features">
+                <q-item-section avatar><q-icon name="auto_awesome" /></q-item-section>
+                <q-item-section>Features</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup to="/security">
+                <q-item-section avatar><q-icon name="shield" /></q-item-section>
+                <q-item-section>Security</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup to="/pricing">
+                <q-item-section avatar><q-icon name="sell" /></q-item-section>
+                <q-item-section>Pricing</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup to="/faq">
+                <q-item-section avatar><q-icon name="help_outline" /></q-item-section>
+                <q-item-section>FAQ</q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup to="/contact">
+                <q-item-section avatar><q-icon name="mail_outline" /></q-item-section>
+                <q-item-section>Contact</q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable v-close-popup to="/auth/login">
+                <q-item-section avatar><q-icon name="login" /></q-item-section>
+                <q-item-section>Log in</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+
         <div class="nav-actions">
           <q-btn flat no-caps label="Log in" class="login-btn" @click="goToLogin" />
 
@@ -232,6 +264,11 @@ function goToSignup() {
   flex-shrink: 0;
 }
 
+.mobile-menu-btn {
+  display: none;
+  color: var(--app-text);
+}
+
 .login-btn {
   min-height: 46px;
 
@@ -311,6 +348,11 @@ function goToSignup() {
   }
 
   .nav-actions {
+    margin-left: 8px;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
     margin-left: auto;
   }
 }
