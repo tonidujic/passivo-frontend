@@ -3,8 +3,12 @@ import { boot } from 'quasar/wrappers'
 import axios from 'axios'
 import { useAuthStore } from 'src/stores/authStore'
 
+const apiBaseUrl =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? 'http://localhost:3000' : 'https://api.passivo.site')
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: apiBaseUrl,
   withCredentials: true,
 })
 
@@ -14,7 +18,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const auth = useAuthStore()
       auth.user = null
-      window.location.href = '/auth/login'
+      window.location.href = '/#/auth/login'
     }
 
     return Promise.reject(error)
