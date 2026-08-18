@@ -45,6 +45,15 @@ export const useAuthStore = defineStore('auth', () => {
 
   let autoLockInterval = null
 
+  function setApiToken(token) {
+    if (token) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`
+      return
+    }
+
+    delete api.defaults.headers.common.Authorization
+  }
+
   const userInitial = computed(() => {
     return user.value?.fullName?.charAt(0)?.toUpperCase() || ''
   })
@@ -284,6 +293,8 @@ export const useAuthStore = defineStore('auth', () => {
         remember,
       })
 
+      setApiToken(res.data.data.token)
+
       user.value = res.data.data.user
 
       publicKey.value = await crypto.subtle.importKey(
@@ -358,6 +369,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function clearSession() {
+    setApiToken(null)
+
     user.value = null
 
     privateKey.value = null
@@ -435,13 +448,15 @@ export const useAuthStore = defineStore('auth', () => {
 
     const rawAuthKey = await exportAuthKey(authKey)
 
-    await api.post('/api/auth/login', {
+    const loginRes = await api.post('/api/auth/login', {
       email: user.value.email,
 
       authKey: rawAuthKey,
 
       remember: isRememberMeEnabled(),
     })
+
+    setApiToken(loginRes.data.data.token)
 
     return true
   }
