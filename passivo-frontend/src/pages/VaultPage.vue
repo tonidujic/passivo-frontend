@@ -3,7 +3,7 @@
     <div class="vault-shell">
       <main class="vault-main">
         <q-inner-loading :showing="loading" class="vault-loader">
-          <q-spinner color="green" size="42px" />
+          <q-spinner color="primary" size="42px" />
         </q-inner-loading>
 
         <div class="hero">
@@ -88,7 +88,12 @@
           <button
             v-for="tab in tabs"
             :key="tab.value"
-            :class="['type-tab', { active: vault.selectedType === tab.value }]"
+            :class="[
+              'type-tab',
+              {
+                active: vault.selectedType === tab.value,
+              },
+            ]"
             @click="vault.selectedType = tab.value"
           >
             <q-icon :name="tab.icon" />
@@ -138,28 +143,28 @@
             v-model="passwordLength"
             :min="8"
             :max="32"
-            color="green"
+            color="primary"
             @update:model-value="generatePassword"
           />
 
           <q-toggle
             v-model="useNumbers"
             label="Numbers"
-            color="green"
+            color="primary"
             @update:model-value="generatePassword"
           />
 
           <q-toggle
             v-model="useSymbols"
             label="Symbols"
-            color="green"
+            color="secondary"
             @update:model-value="generatePassword"
           />
 
           <q-toggle
             v-model="useUppercase"
             label="Uppercase"
-            color="green"
+            color="accent"
             @update:model-value="generatePassword"
           />
 
@@ -177,7 +182,9 @@
       </aside>
 
       <AddPasswordDialog v-model="passwordDialog" @submit="vault.addPasswordItem" />
+
       <AddFileDialog v-model="fileDialog" @submit="vault.addFileItem" />
+
       <AddNoteDialog v-model="notesDialog" @submit="vault.addNoteItem" />
 
       <q-dialog v-model="revealDialog">
@@ -192,6 +199,7 @@
 
           <div class="password-box">
             <span>{{ revealedPassword }}</span>
+
             <q-btn flat round dense icon="content_copy" @click="copyPassword" />
           </div>
 
@@ -269,19 +277,47 @@ const useSymbols = ref(true)
 const useUppercase = ref(true)
 
 const tabs = [
-  { label: 'All', value: 'all', icon: 'dashboard' },
-  { label: 'Favorites', value: 'favorite', icon: 'star' },
-  { label: 'Passwords', value: 'password', icon: 'vpn_key' },
-  { label: 'Files', value: 'file', icon: 'description' },
-  { label: 'Notes', value: 'note', icon: 'sticky_note_2' },
+  {
+    label: 'All',
+    value: 'all',
+    icon: 'dashboard',
+  },
+  {
+    label: 'Favorites',
+    value: 'favorite',
+    icon: 'star',
+  },
+  {
+    label: 'Passwords',
+    value: 'password',
+    icon: 'vpn_key',
+  },
+  {
+    label: 'Files',
+    value: 'file',
+    icon: 'description',
+  },
+  {
+    label: 'Notes',
+    value: 'note',
+    icon: 'sticky_note_2',
+  },
 ]
 
 function generatePassword() {
   let chars = 'abcdefghijklmnopqrstuvwxyz'
 
-  if (useUppercase.value) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  if (useSymbols.value) chars += '!@#$%^&*()_+-=[]{};:,.<>?'
-  if (useNumbers.value) chars += '123456789'
+  if (useUppercase.value) {
+    chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  }
+
+  if (useSymbols.value) {
+    chars += '!@#$%^&*()_+-=[]{};:,.<>?'
+  }
+
+  if (useNumbers.value) {
+    chars += '123456789'
+  }
 
   let password = ''
 
@@ -301,27 +337,40 @@ async function copyGeneratedPassword() {
 }
 
 async function showPassword(item) {
-  if (item.type !== 'password') return
-  if (!item.credential) return
+  if (item.type !== 'password') {
+    return
+  }
+
+  if (!item.credential) {
+    return
+  }
 
   const decrypted = await vault.revealCredential(item)
 
   revealedPassword.value = decrypted.replace(/^"|"$/g, '')
+
   revealDialog.value = true
 }
 
 async function showFile(item) {
-  if (item.type !== 'file') return
+  if (item.type !== 'file') {
+    return
+  }
 
   filePreviewUrl.value = await vault.fetchFile(item)
+
   filePreviewType.value = item.fileType
+
   filePreviewDialog.value = true
 }
 
 async function showNote(item) {
-  if (item.type !== 'note') return
+  if (item.type !== 'note') {
+    return
+  }
 
   revealedNote.value = item.content
+
   noteDialog.value = true
 }
 
@@ -360,14 +409,34 @@ onMounted(async () => {
 .vault-page {
   padding: 32px 48px;
   min-height: 100vh;
-  background: radial-gradient(circle at 88% 8%, rgba(47, 143, 47, 0.1), transparent 28%), #f6f8f6;
+
+  background:
+    radial-gradient(
+      circle at 88% 8%,
+      color-mix(in srgb, var(--q-primary) 10%, transparent),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 10% 90%,
+      color-mix(in srgb, var(--q-secondary) 7%, transparent),
+      transparent 30%
+    ),
+    var(--app-page-bg);
+
+  color: var(--app-text);
+
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
 }
 
 .vault-shell {
   max-width: 1280px;
   width: 100%;
+
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+
   gap: 28px;
 }
 
@@ -390,14 +459,29 @@ onMounted(async () => {
 .hero {
   width: 100%;
   min-height: 160px;
+
   padding: 22px 26px;
   margin-bottom: 20px;
+
   border-radius: 26px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(47, 143, 47, 0.08), rgba(255, 255, 255, 0.94));
-  box-shadow: 0 12px 30px rgba(24, 42, 31, 0.05);
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 11%, var(--app-surface)),
+    color-mix(in srgb, var(--q-secondary) 7%, var(--app-surface))
+  );
+
+  border: 1px solid var(--app-border);
+
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--q-primary) 7%, transparent);
+
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .hero-content {
@@ -406,13 +490,23 @@ onMounted(async () => {
 
 .hero-badge {
   width: fit-content;
+
   padding: 5px 12px;
   margin-bottom: 14px;
+
   border-radius: 999px;
-  background: rgba(47, 143, 47, 0.12);
-  color: #2f8f2f;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 16%, transparent),
+    color-mix(in srgb, var(--q-secondary) 12%, transparent)
+  );
+
+  color: var(--q-primary);
+
   font-size: 11px;
   font-weight: 800;
+
   display: flex;
   align-items: center;
   gap: 6px;
@@ -420,15 +514,20 @@ onMounted(async () => {
 
 .hero h1 {
   margin: 0;
+
   font-size: 34px;
   font-weight: 900;
-  color: #142018;
+
+  color: var(--app-text);
 }
 
 .hero p {
   margin-top: 10px;
+
   max-width: 420px;
-  color: #66746b;
+
+  color: var(--app-text-muted);
+
   font-size: 14px;
   line-height: 1.5;
 }
@@ -441,291 +540,487 @@ onMounted(async () => {
 
 .hero-card {
   min-width: 125px;
+
   padding: 14px 18px;
+
   border-radius: 20px;
-  background: white;
+
+  background: var(--app-surface);
+
+  border: 1px solid var(--app-border);
+
   text-align: center;
 }
 
 .hero-card strong {
   display: block;
+
   font-size: 30px;
   font-weight: 950;
-  color: #142018;
+
+  background: linear-gradient(135deg, var(--q-primary), var(--q-secondary));
+
+  background-clip: text;
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero-card span {
   font-size: 13px;
   font-weight: 800;
-  color: #66746b;
+
+  color: var(--app-text-muted);
 }
 
 .add-btn {
   height: 52px;
+
   padding: 0 22px;
+
   border-radius: 18px;
-  background: linear-gradient(135deg, #2f8f2f, #45b545);
+
+  background: linear-gradient(135deg, var(--q-primary), var(--q-secondary));
+
   color: white;
+
   font-size: 13px;
   font-weight: 900;
+
   letter-spacing: 0.3px;
-  box-shadow: 0 16px 34px rgba(47, 143, 47, 0.24);
+
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--q-primary) 25%, transparent);
 }
 
 .search-input {
   width: 100%;
+
   margin-bottom: 16px;
-  background: white;
+
+  background: var(--app-surface);
+
   border-radius: 18px;
+}
+
+.search-input :deep(.q-field__control) {
+  color: var(--app-text);
+}
+
+.search-input :deep(.q-field__native) {
+  color: var(--app-text);
+}
+
+.search-input :deep(.q-field__native::placeholder) {
+  color: var(--app-text-muted);
+}
+
+.search-input :deep(.q-icon) {
+  color: var(--q-primary);
 }
 
 .type-tabs {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+
   margin-bottom: 22px;
 }
 
 .type-tab {
   height: 42px;
+
   padding: 0 16px;
-  border: 0;
+
+  border: 1px solid var(--app-border);
+
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);
-  color: #526058;
+
+  background: var(--app-surface);
+
+  color: var(--app-text-muted);
+
   font-weight: 800;
+
   cursor: pointer;
+
   display: flex;
   align-items: center;
   gap: 7px;
-  transition: 0.2s ease;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.type-tab:hover,
+.type-tab:hover {
+  color: var(--q-primary);
+
+  border-color: color-mix(in srgb, var(--q-primary) 35%, var(--app-border));
+
+  transform: translateY(-1px);
+}
+
 .type-tab.active {
-  background: rgba(47, 143, 47, 0.14);
-  color: #2f8f2f;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 17%, var(--app-surface)),
+    color-mix(in srgb, var(--q-secondary) 12%, var(--app-surface))
+  );
+
+  color: var(--q-primary);
+
+  border-color: color-mix(in srgb, var(--q-primary) 30%, transparent);
 }
 
 .items {
   width: 100%;
+
   display: flex;
   flex-direction: column;
+
   gap: 14px;
 }
 
 .side-card {
   padding: 22px;
+
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 12px 30px rgba(24, 42, 31, 0.06);
+
+  background: var(--app-surface);
+
+  border: 1px solid var(--app-border);
+
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--q-primary) 6%, transparent);
+
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .side-header {
   margin-bottom: 16px;
+
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+
   gap: 14px;
 }
 
 .side-header h3 {
   margin: 0;
+
   font-size: 18px;
   font-weight: 900;
-  color: #17201a;
+
+  color: var(--app-text);
 }
 
 .side-header p {
   margin: 5px 0 0;
-  color: #66746b;
+
+  color: var(--app-text-muted);
+
   font-size: 13px;
 }
 
 .side-icon {
   width: 44px;
   height: 44px;
+
   border-radius: 16px;
-  background: rgba(47, 143, 47, 0.12);
-  color: #2f8f2f;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 17%, transparent),
+    color-mix(in srgb, var(--q-secondary) 15%, transparent)
+  );
+
+  color: var(--q-primary);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 22px;
 }
 
 .generated-password {
   min-height: 62px;
+
   padding: 16px 18px;
+
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(47, 143, 47, 0.08), rgba(255, 255, 255, 0.95));
-  border: 1px solid rgba(47, 143, 47, 0.12);
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 8%, var(--app-surface-2)),
+    color-mix(in srgb, var(--q-secondary) 8%, var(--app-surface-2))
+  );
+
+  border: 1px solid color-mix(in srgb, var(--q-primary) 18%, var(--app-border));
+
   font-size: 16px;
   font-weight: 800;
+
   letter-spacing: 0.4px;
-  color: #17201a;
+
+  color: var(--app-text);
+
   display: flex;
   align-items: center;
+
   word-break: break-all;
+
   margin: 18px 0 20px;
 }
 
 .generator-row {
   margin-top: 14px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #66746b;
+
+  color: var(--app-text-muted);
+
   font-weight: 800;
 }
 
 .generator-row strong {
-  color: #17201a;
+  color: var(--app-text);
+
   font-size: 18px;
   font-weight: 900;
 }
 
 .generator-actions {
   margin-top: 18px;
+
   display: flex;
   align-items: center;
+
   gap: 12px;
 }
 
 .generate-btn {
   flex: 1;
+
   height: 52px;
+
   border-radius: 18px;
-  background: linear-gradient(135deg, #2f8f2f, #45b545);
+
+  background: linear-gradient(135deg, var(--q-primary), var(--q-secondary));
+
   color: white;
+
   font-size: 13px;
   font-weight: 900;
+
   letter-spacing: 0.5px;
-  box-shadow: 0 12px 26px rgba(47, 143, 47, 0.24);
+
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--q-primary) 24%, transparent);
 }
 
 .copy-btn {
   width: 52px;
   height: 52px;
+
   border-radius: 18px;
-  background: rgba(47, 143, 47, 0.08);
-  color: #2f8f2f;
-  border: 1px solid rgba(47, 143, 47, 0.12);
+
+  background: color-mix(in srgb, var(--q-secondary) 10%, var(--app-surface));
+
+  color: var(--q-secondary);
+
+  border: 1px solid color-mix(in srgb, var(--q-secondary) 18%, var(--app-border));
 }
 
 .reveal-card {
   width: 380px;
+
   padding: 28px;
+
   border-radius: 32px;
+
   text-align: center;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 30px 80px rgba(24, 42, 31, 0.22);
+
+  background: var(--app-surface);
+
+  color: var(--app-text);
+
+  border: 1px solid var(--app-border);
+
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
 }
 
 .reveal-icon {
   width: 58px;
   height: 58px;
+
   margin: 0 auto 16px;
+
   border-radius: 18px;
-  background: rgba(47, 143, 47, 0.12);
-  color: #2f8f2f;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 17%, transparent),
+    color-mix(in srgb, var(--q-secondary) 14%, transparent)
+  );
+
+  color: var(--q-primary);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 28px;
 }
 
 .reveal-card h2 {
   margin: 0;
+
   font-size: 28px;
   font-weight: 900;
-  color: #17201a;
+
+  color: var(--app-text);
 }
 
 .reveal-subtitle {
   margin: 8px 0 20px;
-  color: #6c766f;
+
+  color: var(--app-text-muted);
+
   font-size: 14px;
 }
 
 .password-box {
   min-height: 54px;
+
   padding: 0 12px 0 18px;
+
   border-radius: 16px;
-  background: #eef4ef;
-  color: #17201a;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 8%, var(--app-surface-2)),
+    color-mix(in srgb, var(--q-secondary) 6%, var(--app-surface-2))
+  );
+
+  color: var(--app-text);
+
   font-size: 18px;
   font-weight: 800;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   word-break: break-all;
 }
 
 .close-btn {
   width: 100%;
+
   height: 48px;
+
   margin-top: 22px;
+
   border-radius: 16px;
-  background: #2f8f2f;
+
+  background: linear-gradient(135deg, var(--q-primary), var(--q-secondary));
+
   color: white;
+
   font-weight: 800;
 }
 
 .file-preview-card {
   width: 900px;
+
   max-width: 95vw;
+
   padding: 20px;
+
   border-radius: 32px;
-  background: white;
+
+  background: var(--app-surface);
+
+  color: var(--app-text);
+
+  border: 1px solid var(--app-border);
 }
 
 .file-preview-image {
   width: 100%;
+
   max-height: 75vh;
+
   object-fit: contain;
+
   border-radius: 16px;
 }
 
 .file-preview-pdf {
   width: 100%;
+
   height: 75vh;
+
   border: 0;
+
   border-radius: 16px;
 }
 
 .file-preview-empty {
   height: 300px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #66746b;
+
+  color: var(--app-text-muted);
+
   font-weight: 800;
 }
 
 .note-preview-card {
   width: 850px;
+
   max-width: 95vw;
+
   padding: 24px;
+
   border-radius: 32px;
+
+  background: var(--app-surface);
+
+  color: var(--app-text);
+
+  border: 1px solid var(--app-border);
 }
 
 .note-header {
   display: flex;
   align-items: center;
+
   gap: 12px;
+
   margin-bottom: 18px;
-  color: #2f8f2f;
+
+  color: var(--q-primary);
 }
 
 .note-header h2 {
   margin: 0;
+
   font-size: 26px;
   font-weight: 900;
 }
 
 .note-editor {
   border-radius: 16px;
+
   overflow: hidden;
 }
 
@@ -747,11 +1042,21 @@ onMounted(async () => {
 <style>
 .new-item-menu {
   width: 290px;
+
   padding: 12px;
+
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.98);
+
+  background: var(--app-surface);
+
+  color: var(--app-text);
+
+  border: 1px solid var(--app-border);
+
   backdrop-filter: blur(18px);
-  box-shadow: 0 22px 70px rgba(24, 42, 31, 0.16);
+
+  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.16);
+
   overflow: hidden;
 }
 
@@ -761,37 +1066,61 @@ onMounted(async () => {
 
 .new-item-menu .menu-item {
   min-height: 86px;
+
   padding: 14px;
+
   border-radius: 24px;
+
   margin-bottom: 8px;
-  transition: 0.2s ease;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .new-item-menu .menu-item:hover {
-  background: rgba(47, 143, 47, 0.08);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 10%, transparent),
+    color-mix(in srgb, var(--q-secondary) 8%, transparent)
+  );
+
+  transform: translateX(2px);
 }
 
 .new-item-menu .icon-box {
   width: 54px;
   height: 54px;
+
   border-radius: 20px;
-  background: rgba(47, 143, 47, 0.12);
-  color: #2f8f2f;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 17%, transparent),
+    color-mix(in srgb, var(--q-secondary) 14%, transparent)
+  );
+
+  color: var(--q-primary);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 22px;
 }
 
 .new-item-menu .title {
   font-size: 16px;
   font-weight: 900;
-  color: #17201a;
+
+  color: var(--app-text);
 }
 
 .new-item-menu .subtitle {
   margin-top: 4px;
+
   font-size: 13px;
-  color: #7b847d;
+
+  color: var(--app-text-muted);
 }
 </style>

@@ -7,6 +7,7 @@ import {
   generateUserKeyPair,
   exportAuthKey,
 } from 'src/utils/crypto/keys'
+
 import {
   encryptPrivateKey,
   generateDeviceKey,
@@ -17,6 +18,7 @@ import {
   encryptData,
   decryptData,
 } from 'src/utils/crypto/encryption'
+
 import {
   arrayBufferToBase64,
   uint8ArrayToBase64,
@@ -26,134 +28,260 @@ import {
 
 import { saveDeviceKey, getDeviceKey, removeDeviceKey } from 'src/utils/crypto/deviceStorage'
 
+const REMEMBER_ME_KEY = 'passivoRememberMe'
+
+const ACTIVE_USER_KEY = 'passivoActiveUser'
+
+const PUBLIC_KEY_KEY = 'publicKey'
+
+const PRIVATE_KEY_DEVICE_KEY = 'privateKeyForDevice'
+
+const PRIVATE_KEY_IV_KEY = 'devicePrivateKeyIv'
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const privateKey = ref(null)
   const publicKey = ref(null)
 
+  let autoLockInterval = null
+
   const userInitial = computed(() => {
     return user.value?.fullName?.charAt(0)?.toUpperCase() || ''
   })
 
-  async function restoreCryptoSession() {
-    if (publicKey.value && privateKey.value) {
+  function isRememberMeEnabled() {
+    return localStorage.getItem(REMEMBER_ME_KEY) === 'true'
+  }
+
+  function getUserStorageKey(currentUser) {
+    return currentUser?.id || currentUser?._id || currentUser?.email || null
+  }
+
+  function clearStorageKeys(storage) {
+    storage.removeItem(PUBLIC_KEY_KEY)
+
+    storage.removeItem(PRIVATE_KEY_DEVICE_KEY)
+
+    storage.removeItem(PRIVATE_KEY_IV_KEY)
+  }
+
+  function clearActiveUserStorage() {
+    localStorage.removeItem(ACTIVE_USER_KEY)
+
+    sessionStorage.removeItem(ACTIVE_USER_KEY)
+  }
+
+  function saveActiveUserStorage(currentUser, remember) {
+    const userKey = getUserStorageKey(currentUser)
+
+    clearActiveUserStorage()
+
+    if (!userKey) {
       return
     }
 
+    const storage = remember ? localStorage : sessionStorage
+
+    storage.setItem(ACTIVE_USER_KEY, String(userKey))
+  }
+
+  function saveCryptoStorage({
+    publicKeyBase64,
+    privateKeyForDevice,
+    devicePrivateKeyIv,
+    remember,
+  }) {
+    clearStorageKeys(localStorage)
+
+    clearStorageKeys(sessionStorage)
+
+    const storage = remember ? localStorage : sessionStorage
+
+    storage.setItem(PUBLIC_KEY_KEY, publicKeyBase64)
+
+    storage.setItem(PRIVATE_KEY_DEVICE_KEY, privateKeyForDevice)
+
+    storage.setItem(PRIVATE_KEY_IV_KEY, devicePrivateKeyIv)
+
+    if (remember) {
+      localStorage.setItem(REMEMBER_ME_KEY, 'true')
+    } else {
+      localStorage.removeItem(REMEMBER_ME_KEY)
+    }
+  }
+
+  function getCryptoStorage() {
+    if (isRememberMeEnabled()) {
+      return localStorage
+    }
+
+    return sessionStorage
+  }
+
+  async function restoreCryptoSession() {
     try {
-      const publicKeyBase64 = sessionStorage.getItem('publicKey')
+      if (!publicKey.value || !privateKey.value) {
+        const storage = getCryptoStorage()
 
-      const privateKeyForDevice = sessionStorage.getItem('privateKeyForDevice')
+        const publicKeyBase64 = storage.getItem(PUBLIC_KEY_KEY)
 
-      const devicePrivateKeyIv = sessionStorage.getItem('devicePrivateKeyIv')
+        const privateKeyForDevice = storage.getItem(PRIVATE_KEY_DEVICE_KEY)
 
-      const deviceKeyBase64 = await getDeviceKey()
+        const devicePrivateKeyIv = storage.getItem(PRIVATE_KEY_IV_KEY)
 
-      if (!publicKeyBase64 || !privateKeyForDevice || !devicePrivateKeyIv || !deviceKeyBase64) {
-        return
+        const deviceKeyBase64 = await getDeviceKey()
+
+        if (!publicKeyBase64 || !privateKeyForDevice || !devicePrivateKeyIv || !deviceKeyBase64) {
+          return false
+        }
+
+        publicKey.value = await crypto.subtle.importKey(
+          'spki',
+          base64ToArrayBuffer(publicKeyBase64),
+          {
+            name: 'RSA-OAEP',
+            hash: 'SHA-256',
+          },
+          true,
+          ['encrypt'],
+        )
+
+        const deviceKey = await importDeviceKey(deviceKeyBase64)
+
+        const decryptedPrivateKey = await decryptPrivateKeyForDevice(
+          privateKeyForDevice,
+          devicePrivateKeyIv,
+          deviceKey,
+        )
+
+        privateKey.value = await crypto.subtle.importKey(
+          'pkcs8',
+          decryptedPrivateKey,
+          {
+            name: 'RSA-OAEP',
+            hash: 'SHA-256',
+          },
+          true,
+          ['decrypt'],
+        )
       }
 
-      publicKey.value = await crypto.subtle.importKey(
-        'spki',
-        base64ToArrayBuffer(publicKeyBase64),
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-256',
-        },
-        true,
-        ['encrypt'],
-      )
+      if (!user.value) {
+        const res = await api.get('/api/auth/me')
 
-      const deviceKey = await importDeviceKey(deviceKeyBase64)
+        const me = res.data.data.user
 
-      const decryptedPrivateKey = await decryptPrivateKeyForDevice(
-        privateKeyForDevice,
-        devicePrivateKeyIv,
-        deviceKey,
-      )
+        user.value = me
 
-      privateKey.value = await crypto.subtle.importKey(
-        'pkcs8',
-        decryptedPrivateKey,
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-256',
-        },
-        true,
-        ['decrypt'],
-      )
-      const res = await api.get('/api/auth/me')
-      const me = res.data.data.user
-
-      user.value = me
-
-      if (user.value?.fullName) {
-        user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
+        if (user.value?.fullName && privateKey.value) {
+          user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
+        }
       }
+
+      saveActiveUserStorage(user.value, isRememberMeEnabled())
+
+      return true
     } catch (err) {
-      console.error('error:', err)
+      console.error('RESTORE SESSION ERROR:', err.response?.data || err.message)
+
+      return false
     }
   }
 
   const signUp = async (payload) => {
     try {
       const salt = crypto.getRandomValues(new Uint8Array(16))
+
       const { authKey, encryptionKey } = await deriveAuthAndEncryptionKeys(payload.password, salt)
+
       const keyPair = await generateUserKeyPair()
+
       const exportedPublicKey = await crypto.subtle.exportKey('spki', keyPair.publicKey)
+
       const rawAuthKey = await exportAuthKey(authKey)
 
-      const { privateKey, iv } = await encryptPrivateKey(keyPair.privateKey, encryptionKey)
-      let fullName = await encryptData(payload.fullName, keyPair.publicKey)
+      const { privateKey: encryptedPrivateKey, iv } = await encryptPrivateKey(
+        keyPair.privateKey,
+        encryptionKey,
+      )
+
+      const encryptedFullName = await encryptData(payload.fullName, keyPair.publicKey)
 
       const signUpPayload = {
-        fullName: arrayBufferToBase64(fullName),
+        fullName: arrayBufferToBase64(encryptedFullName),
+
         email: payload.email,
+
         salt: uint8ArrayToBase64(salt),
+
         payloadAuthKey: rawAuthKey,
+
         publicKey: arrayBufferToBase64(exportedPublicKey),
-        privateKey: arrayBufferToBase64(privateKey),
+
+        privateKey: arrayBufferToBase64(encryptedPrivateKey),
+
         iv: uint8ArrayToBase64(iv),
       }
+
       const res = await api.post('/api/auth/signup', signUpPayload)
+
       user.value = res.data.data.user
+
       privateKey.value = keyPair.privateKey
+
       publicKey.value = keyPair.publicKey
-      const deviceKey = await generateDeviceKey()
-      const deviceKeyBase64 = await exportDeviceKey(deviceKey)
+
       user.value.fullName = payload.fullName
+
+      const deviceKey = await generateDeviceKey()
+
+      const deviceKeyBase64 = await exportDeviceKey(deviceKey)
+
       const { privateKeyForDevice, devicePrivateKeyIv } = await encryptPrivateKeyForDevice(
         privateKey.value,
         deviceKey,
       )
 
-      sessionStorage.setItem('publicKey', arrayBufferToBase64(exportedPublicKey))
-      sessionStorage.setItem('privateKeyForDevice', privateKeyForDevice)
-      sessionStorage.setItem('devicePrivateKeyIv', devicePrivateKeyIv)
+      saveCryptoStorage({
+        publicKeyBase64: arrayBufferToBase64(exportedPublicKey),
+
+        privateKeyForDevice,
+
+        devicePrivateKeyIv,
+
+        remember: false,
+      })
+
+      saveActiveUserStorage(user.value, false)
 
       await saveDeviceKey(deviceKeyBase64)
+
       await autoLock()
+
+      return res.data
     } catch (err) {
-      console.error('STATUS:', err.response?.status)
+      console.error('SIGNUP STATUS:', err.response?.status)
 
       throw err
     }
   }
-  const logIn = async (payload) => {
+
+  const logIn = async ({ email, password, remember = false }) => {
     try {
       const initRes = await api.post('/api/auth/login/init', {
-        email: payload.email,
+        email,
       })
 
       const salt = base64ToUint8Array(initRes.data.data.salt)
 
-      const { authKey, encryptionKey } = await deriveAuthAndEncryptionKeys(payload.password, salt)
+      const { authKey, encryptionKey } = await deriveAuthAndEncryptionKeys(password, salt)
 
       const rawAuthKey = await exportAuthKey(authKey)
 
       const res = await api.post('/api/auth/login', {
-        email: payload.email,
+        email,
         authKey: rawAuthKey,
+        remember,
       })
 
       user.value = res.data.data.user
@@ -172,9 +300,12 @@ export const useAuthStore = defineStore('auth', () => {
       const decryptedPrivateKey = await crypto.subtle.decrypt(
         {
           name: 'AES-GCM',
+
           iv: base64ToUint8Array(res.data.data.user.iv),
         },
+
         encryptionKey,
+
         base64ToArrayBuffer(res.data.data.user.privateKey),
       )
 
@@ -192,6 +323,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
 
       const deviceKey = await generateDeviceKey()
+
       const deviceKeyBase64 = await exportDeviceKey(deviceKey)
 
       const { privateKeyForDevice, devicePrivateKeyIv } = await encryptPrivateKeyForDevice(
@@ -199,43 +331,81 @@ export const useAuthStore = defineStore('auth', () => {
         deviceKey,
       )
 
-      sessionStorage.setItem('publicKey', res.data.data.user.publicKey)
-      sessionStorage.setItem('privateKeyForDevice', privateKeyForDevice)
-      sessionStorage.setItem('devicePrivateKeyIv', devicePrivateKeyIv)
+      saveCryptoStorage({
+        publicKeyBase64: res.data.data.user.publicKey,
+
+        privateKeyForDevice,
+
+        devicePrivateKeyIv,
+
+        remember,
+      })
+
+      saveActiveUserStorage(user.value, remember)
 
       await saveDeviceKey(deviceKeyBase64)
+
       await autoLock()
 
       return res.data
     } catch (err) {
       console.error('STATUS:', err.response?.status)
+
       console.error('LOGIN ERROR:', err.response?.data || err.message)
+
       throw err
     }
   }
 
   async function clearSession() {
     user.value = null
-    privateKey.value = null
-    publicKey.value = null
-    sessionStorage.removeItem('privateKeyForDevice')
-    sessionStorage.removeItem('publicKey')
 
-    sessionStorage.removeItem('devicePrivateKeyIv')
+    privateKey.value = null
+
+    publicKey.value = null
+
+    clearStorageKeys(sessionStorage)
+
+    clearStorageKeys(localStorage)
+
+    localStorage.removeItem(REMEMBER_ME_KEY)
+
+    clearActiveUserStorage()
+
     await removeDeviceKey()
   }
 
   async function logout() {
+    window.postMessage(
+      {
+        source: 'PASSIVO_APP',
+        type: 'PASSIVO_LOGOUT',
+      },
+      window.location.origin,
+    )
+
     await api.post('/api/auth/logout')
+
     await clearSession()
   }
 
-  let autoLockInterval = null
   async function autoLock() {
     await resetTimer()
+
+    window.removeEventListener('mousemove', resetTimer)
+
+    window.removeEventListener('click', resetTimer)
+
+    window.removeEventListener('scroll', resetTimer)
+
+    window.removeEventListener('keydown', resetTimer)
+
     window.addEventListener('mousemove', resetTimer)
+
     window.addEventListener('click', resetTimer)
+
     window.addEventListener('scroll', resetTimer)
+
     window.addEventListener('keydown', resetTimer)
   }
 
@@ -250,15 +420,94 @@ export const useAuthStore = defineStore('auth', () => {
     )
   }
 
+  const verifyCurrentPassword = async (password) => {
+    if (!user.value?.email) {
+      throw new Error('User email is missing')
+    }
+
+    const initRes = await api.post('/api/auth/login/init', {
+      email: user.value.email,
+    })
+
+    const salt = base64ToUint8Array(initRes.data.data.salt)
+
+    const { authKey } = await deriveAuthAndEncryptionKeys(password, salt)
+
+    const rawAuthKey = await exportAuthKey(authKey)
+
+    await api.post('/api/auth/login', {
+      email: user.value.email,
+
+      authKey: rawAuthKey,
+
+      remember: isRememberMeEnabled(),
+    })
+
+    return true
+  }
+
+  const changePassword = async ({ currentPassword, newPassword }) => {
+    if (!user.value?.email) {
+      throw new Error('User email is missing')
+    }
+
+    if (!privateKey.value) {
+      throw new Error('Private key is not available')
+    }
+
+    const initRes = await api.post('/api/auth/login/init', {
+      email: user.value.email,
+    })
+
+    const currentSalt = base64ToUint8Array(initRes.data.data.salt)
+
+    const { authKey: currentAuthKey } = await deriveAuthAndEncryptionKeys(
+      currentPassword,
+      currentSalt,
+    )
+
+    const rawCurrentAuthKey = await exportAuthKey(currentAuthKey)
+
+    const newSalt = crypto.getRandomValues(new Uint8Array(16))
+
+    const { authKey: newAuthKey, encryptionKey: newEncryptionKey } =
+      await deriveAuthAndEncryptionKeys(newPassword, newSalt)
+
+    const rawNewAuthKey = await exportAuthKey(newAuthKey)
+
+    const { privateKey: encryptedPrivateKey, iv } = await encryptPrivateKey(
+      privateKey.value,
+      newEncryptionKey,
+    )
+
+    await api.patch('/api/auth/change-password', {
+      currentAuthKey: rawCurrentAuthKey,
+
+      newAuthKey: rawNewAuthKey,
+
+      salt: uint8ArrayToBase64(newSalt),
+
+      privateKey: arrayBufferToBase64(encryptedPrivateKey),
+
+      iv: uint8ArrayToBase64(iv),
+    })
+  }
+
   return {
-    signUp,
-    logIn,
     user,
     privateKey,
     publicKey,
-    restoreCryptoSession,
+
     userInitial,
+
+    signUp,
+    logIn,
     logout,
+
+    restoreCryptoSession,
     clearSession,
+
+    verifyCurrentPassword,
+    changePassword,
   }
 })

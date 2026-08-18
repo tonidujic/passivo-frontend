@@ -41,23 +41,28 @@
     </div>
 
     <div class="item-info">
-      <strong>{{ item.title }}</strong>
-      <p>{{ item.subtitle }}</p>
+      <strong>
+        {{ item.title }}
+      </strong>
+
+      <p>
+        {{ item.subtitle }}
+      </p>
 
       <q-badge
         v-if="item.type === 'password' && item.website"
         outline
-        color="green"
+        color="primary"
         class="q-mt-xs"
       >
         {{ cleanWebsite(item.website) }}
       </q-badge>
 
-      <q-badge v-if="item.type === 'file'" outline color="green" class="q-mt-xs">
+      <q-badge v-if="item.type === 'file'" outline color="secondary" class="q-mt-xs">
         {{ getFileType(item) }}
       </q-badge>
 
-      <q-badge v-if="item.type === 'note'" outline color="green" class="q-mt-xs">NOTE</q-badge>
+      <q-badge v-if="item.type === 'note'" outline color="accent" class="q-mt-xs"> NOTE </q-badge>
     </div>
 
     <div class="item-actions">
@@ -65,11 +70,12 @@
         flat
         round
         :icon="item.favorite ? 'star' : 'star_border'"
-        color="green"
+        color="primary"
+        class="favorite-btn"
         @click="$emit('toggle-favorite', item.id)"
       />
 
-      <q-btn flat round dense icon="more_vert">
+      <q-btn flat round dense icon="more_vert" class="more-btn">
         <q-menu anchor="bottom right" self="top right" class="vault-menu">
           <q-list>
             <template v-if="item.type === 'password'">
@@ -82,45 +88,49 @@
 
                 <q-item-section>
                   <div class="menu-title">Open</div>
+
                   <div class="menu-subtitle">Reveal saved password</div>
                 </q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup class="menu-item" @click="copyPassword">
                 <q-item-section avatar>
-                  <div class="menu-icon">
+                  <div class="menu-icon secondary-icon">
                     <q-icon name="content_copy" />
                   </div>
                 </q-item-section>
 
                 <q-item-section>
                   <div class="menu-title">Copy password</div>
+
                   <div class="menu-subtitle">Copy secret to clipboard</div>
                 </q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup class="menu-item" @click="copyUsername">
                 <q-item-section avatar>
-                  <div class="menu-icon">
+                  <div class="menu-icon accent-icon">
                     <q-icon name="person" />
                   </div>
                 </q-item-section>
 
                 <q-item-section>
                   <div class="menu-title">Copy username</div>
+
                   <div class="menu-subtitle">Copy login username</div>
                 </q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup class="menu-item" @click="openWebsite">
                 <q-item-section avatar>
-                  <div class="menu-icon">
+                  <div class="menu-icon secondary-icon">
                     <q-icon name="open_in_new" />
                   </div>
                 </q-item-section>
 
                 <q-item-section>
                   <div class="menu-title">Open website</div>
+
                   <div class="menu-subtitle">Go to saved website</div>
                 </q-item-section>
               </q-item>
@@ -129,13 +139,14 @@
             <template v-if="item.type === 'file'">
               <q-item clickable v-close-popup class="menu-item" @click="$emit('click-more', item)">
                 <q-item-section avatar>
-                  <div class="menu-icon">
+                  <div class="menu-icon secondary-icon">
                     <q-icon name="visibility" />
                   </div>
                 </q-item-section>
 
                 <q-item-section>
                   <div class="menu-title">Preview</div>
+
                   <div class="menu-subtitle">Open encrypted file</div>
                 </q-item-section>
               </q-item>
@@ -149,6 +160,7 @@
 
                 <q-item-section>
                   <div class="menu-title">Download</div>
+
                   <div class="menu-subtitle">Save file to device</div>
                 </q-item-section>
               </q-item>
@@ -157,13 +169,14 @@
             <template v-if="item.type === 'note'">
               <q-item clickable v-close-popup class="menu-item" @click="$emit('click-more', item)">
                 <q-item-section avatar>
-                  <div class="menu-icon">
+                  <div class="menu-icon accent-icon">
                     <q-icon name="sticky_note_2" />
                   </div>
                 </q-item-section>
 
                 <q-item-section>
                   <div class="menu-title">Open note</div>
+
                   <div class="menu-subtitle">Read encrypted note</div>
                 </q-item-section>
               </q-item>
@@ -180,6 +193,7 @@
 
               <q-item-section>
                 <div class="menu-title delete-menu-title">Delete</div>
+
                 <div class="menu-subtitle">Remove from vault</div>
               </q-item-section>
             </q-item>
@@ -233,17 +247,23 @@ function downloadFile() {
 }
 
 const faviconUrl = computed(() => {
-  if (!item.website) return null
+  if (!item.website) {
+    return null
+  }
 
   const domain = cleanWebsite(item.website)
 
-  if (!domain.includes('.')) return null
+  if (!domain.includes('.')) {
+    return null
+  }
 
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
 })
 
 function cleanWebsite(website) {
-  if (!website) return ''
+  if (!website) {
+    return ''
+  }
 
   return website.replace(/^https?:\/\//, '').replace(/^www\./, '')
 }
@@ -251,9 +271,17 @@ function cleanWebsite(website) {
 function getFileType(item) {
   const file = item.subtitle?.toLowerCase()
 
-  if (file?.includes('.pdf')) return 'PDF'
-  if (file?.includes('.txt')) return 'TEXT'
-  if (file?.includes('.png') || file?.includes('.jpg') || file?.includes('.jpeg')) return 'IMAGE'
+  if (file?.includes('.pdf')) {
+    return 'PDF'
+  }
+
+  if (file?.includes('.txt')) {
+    return 'TEXT'
+  }
+
+  if (file?.includes('.png') || file?.includes('.jpg') || file?.includes('.jpeg')) {
+    return 'IMAGE'
+  }
 
   return 'FILE'
 }
@@ -262,23 +290,56 @@ function getFileType(item) {
 <style scoped>
 .vault-item {
   min-height: 112px;
+
   padding: 18px 22px;
+
   border-radius: 22px;
+
   display: flex;
   align-items: center;
+
   gap: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 14px 36px rgba(24, 42, 31, 0.07);
+
+  background: linear-gradient(
+    145deg,
+    var(--app-surface),
+    color-mix(in srgb, var(--q-primary) 3%, var(--app-surface))
+  );
+
+  border: 1px solid var(--app-border);
+
+  color: var(--app-text);
+
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--q-primary) 6%, transparent);
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.vault-item:hover {
+  transform: translateY(-2px);
+
+  border-color: color-mix(in srgb, var(--q-primary) 30%, var(--app-border));
+
+  box-shadow: 0 18px 45px color-mix(in srgb, var(--q-primary) 10%, transparent);
 }
 
 .app-icon {
   width: 62px;
   height: 62px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   overflow: hidden;
+
   flex-shrink: 0;
+
+  color: var(--app-text);
 }
 
 .password-icon {
@@ -288,38 +349,68 @@ function getFileType(item) {
 .website-logo {
   width: 54px;
   height: 54px;
+
   border-radius: 50%;
+
   object-fit: cover;
+
+  background: var(--app-surface-2);
+
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 .file-icon {
   border-radius: 16px;
-  background: rgba(47, 143, 47, 0.08);
-  color: #2f8f2f;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-secondary) 18%, transparent),
+    color-mix(in srgb, var(--q-primary) 11%, transparent)
+  );
+
+  color: var(--q-secondary);
+
+  border: 1px solid color-mix(in srgb, var(--q-secondary) 16%, transparent);
 }
 
 .preview-image {
   width: 100%;
   height: 100%;
+
   object-fit: cover;
+
+  border-radius: 16px;
 }
 
 .pdf-preview {
   width: 100%;
   height: 100%;
+
   border: none;
+
   pointer-events: none;
+
+  border-radius: 16px;
 }
 
 .note-icon {
   border-radius: 16px;
-  background: rgba(255, 196, 0, 0.12);
-  color: #d4a100;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-accent) 18%, transparent),
+    color-mix(in srgb, var(--q-secondary) 11%, transparent)
+  );
+
+  color: var(--q-accent);
+
+  border: 1px solid color-mix(in srgb, var(--q-accent) 16%, transparent);
 }
 
 .note-preview {
   width: 100%;
   height: 100%;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,14 +418,18 @@ function getFileType(item) {
 
 .item-info {
   flex: 1;
+
   min-width: 0;
 }
 
 .item-info strong {
   display: block;
+
   font-size: 17px;
   font-weight: 900;
-  color: #17201a;
+
+  color: var(--app-text);
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -342,29 +437,73 @@ function getFileType(item) {
 
 .item-info p {
   margin: 3px 0 0;
+
   font-size: 14px;
-  color: #6c766f;
+
+  color: var(--app-text-muted);
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.item-info :deep(.q-badge) {
+  font-weight: 700;
+}
+
 .item-actions {
   display: flex;
   align-items: center;
+
   gap: 4px;
+
   flex-shrink: 0;
+}
+
+.favorite-btn {
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.08);
+
+  background: color-mix(in srgb, var(--q-primary) 10%, transparent);
+}
+
+.more-btn {
+  color: var(--app-text-muted);
+}
+
+.more-btn:hover {
+  color: var(--q-secondary);
+
+  background: color-mix(in srgb, var(--q-secondary) 10%, transparent);
 }
 </style>
 
 <style>
 .vault-menu {
   width: 290px;
+
   padding: 12px;
+
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.98);
+
+  background: linear-gradient(
+    145deg,
+    var(--app-surface),
+    color-mix(in srgb, var(--q-primary) 3%, var(--app-surface))
+  );
+
+  border: 1px solid var(--app-border);
+
+  color: var(--app-text);
+
   backdrop-filter: blur(18px);
-  box-shadow: 0 22px 70px rgba(24, 42, 31, 0.16);
+
+  box-shadow: 0 22px 70px color-mix(in srgb, var(--q-primary) 10%, rgba(0, 0, 0, 0.15));
 }
 
 .vault-menu .q-list {
@@ -373,46 +512,98 @@ function getFileType(item) {
 
 .vault-menu .menu-item {
   min-height: 76px;
+
   padding: 12px;
+
   border-radius: 18px;
+
   margin-bottom: 8px;
-  transition: 0.2s ease;
+
+  color: var(--app-text);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .vault-menu .menu-item:hover {
-  background: rgba(47, 143, 47, 0.08);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--q-primary) 11%, transparent),
+    color-mix(in srgb, var(--q-secondary) 8%, transparent)
+  );
+
+  transform: translateX(2px);
 }
 
 .vault-menu .menu-icon {
   width: 46px;
   height: 46px;
+
   border-radius: 16px;
-  background: rgba(47, 143, 47, 0.12);
-  color: #2f8f2f;
+
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-primary) 18%, transparent),
+    color-mix(in srgb, var(--q-secondary) 11%, transparent)
+  );
+
+  color: var(--q-primary);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 20px;
+}
+
+.vault-menu .secondary-icon {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-secondary) 18%, transparent),
+    color-mix(in srgb, var(--q-primary) 8%, transparent)
+  );
+
+  color: var(--q-secondary);
+}
+
+.vault-menu .accent-icon {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--q-accent) 18%, transparent),
+    color-mix(in srgb, var(--q-secondary) 8%, transparent)
+  );
+
+  color: var(--q-accent);
 }
 
 .vault-menu .menu-title {
   font-size: 15px;
+
   font-weight: 900;
-  color: #17201a;
+
+  color: var(--app-text);
 }
 
 .vault-menu .menu-subtitle {
   margin-top: 3px;
+
   font-size: 12px;
-  color: #7b847d;
+
+  color: var(--app-text-muted);
+}
+
+.vault-menu .q-separator {
+  background: var(--app-border);
 }
 
 .vault-menu .delete-menu-item:hover {
-  background: rgba(239, 68, 68, 0.08);
+  background: color-mix(in srgb, #ef4444 10%, transparent);
 }
 
 .vault-menu .delete-menu-icon {
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+
   color: #ef4444;
 }
 

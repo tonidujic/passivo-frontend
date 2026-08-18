@@ -1,1 +1,26 @@
 // app global css
+body {
+  background: var(--app-page-bg);
+}
+
+.q-page-container {
+  background: var(--app-page-bg);
+}
+
+.app-surface {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+}
+
+.app-gradient-bg {
+  background: linear-gradient(135deg, var(--app-gradient-start), var(--app-gradient-end));
+}
+
+.text-brand {
+  color: var(--q-primary);
+}
+
+.text-brand-secondary {
+  color: var(--q-secondary);
+}

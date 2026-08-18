@@ -244,6 +244,11 @@ export const useVaultStore = defineStore('vault', () => {
   }
 
   async function revealCredential(item) {
+    await auth.restoreCryptoSession()
+
+    if (!auth.privateKey) {
+      throw new Error('Private key is missing')
+    }
     return await decryptCredential(item.credential, auth.privateKey)
   }
 

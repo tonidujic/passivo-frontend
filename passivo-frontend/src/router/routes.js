@@ -57,6 +57,10 @@ const routes = [
         path: 'vault',
         component: () => import('pages/VaultPage.vue'),
       },
+      {
+        path: 'settings',
+        component: () => import('pages/SettingsPage.vue'),
+      },
     ],
   },
 
