@@ -17,8 +17,11 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       const auth = useAuthStore()
-      auth.user = null
-      window.location.href = '/auth/login'
+      await auth.clearSession()
+
+      if (window.location.pathname !== '/auth/login') {
+        window.location.replace('/auth/login')
+      }
     }
 
     return Promise.reject(error)

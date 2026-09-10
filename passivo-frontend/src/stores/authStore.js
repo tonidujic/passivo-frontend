@@ -175,16 +175,17 @@ export const useAuthStore = defineStore('auth', () => {
         )
       }
 
-      if (!user.value) {
-        const res = await api.get('/api/auth/me')
+      // Always validate the server-side user before using locally restored
+      // encryption keys. This prevents an old cookie from creating records
+      // under a user ID that no longer exists.
+      const res = await api.get('/api/auth/me')
 
-        const me = res.data.data.user
+      const me = res.data.data.user
 
-        user.value = me
+      user.value = me
 
-        if (user.value?.fullName && privateKey.value) {
-          user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
-        }
+      if (user.value?.fullName && privateKey.value) {
+        user.value.fullName = await decryptData(user.value.fullName, privateKey.value)
       }
 
       saveActiveUserStorage(user.value, isRememberMeEnabled())
