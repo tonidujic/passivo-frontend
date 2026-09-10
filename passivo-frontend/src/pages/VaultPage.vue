@@ -183,7 +183,7 @@
 
       <AddPasswordDialog v-model="passwordDialog" @submit="vault.addPasswordItem" />
 
-      <AddFileDialog v-model="fileDialog" @submit="vault.addFileItem" />
+      <AddFileDialog v-model="fileDialog" @submit="addFile" />
 
       <AddNoteDialog v-model="notesDialog" @submit="vault.addNoteItem" />
 
@@ -245,6 +245,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useQuasar } from 'quasar'
 
 import { useVaultStore } from 'src/stores/vaultStore'
 
@@ -254,6 +255,7 @@ import AddFileDialog from 'components/vault/AddFileDialog.vue'
 import AddNoteDialog from 'components/vault/AddNoteDialog.vue'
 
 const vault = useVaultStore()
+const $q = useQuasar()
 
 const passwordDialog = ref(false)
 const fileDialog = ref(false)
@@ -334,6 +336,19 @@ async function copyGeneratedPassword() {
   }
 
   await navigator.clipboard.writeText(generatedPassword.value)
+}
+
+async function addFile(payload) {
+  try {
+    await vault.addFileItem(payload)
+    $q.notify({ type: 'positive', message: 'File encrypted and saved.' })
+  } catch (err) {
+    fileDialog.value = true
+    $q.notify({
+      type: 'negative',
+      message: err.response?.data?.message || err.message || 'File could not be saved.',
+    })
+  }
 }
 
 async function showPassword(item) {

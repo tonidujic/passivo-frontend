@@ -32,6 +32,10 @@
             label="Choose file"
             color="primary"
             class="dialog-input"
+            :max-file-size="MAX_FILE_SIZE"
+            :error="Boolean(fileError)"
+            :error-message="fileError"
+            @rejected="rejectFile"
           >
             <template #prepend>
               <q-icon name="upload_file" />
@@ -66,6 +70,8 @@
 <script setup>
 import { ref, watch } from 'vue'
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
 const props = defineProps({
   modelValue: Boolean,
 })
@@ -73,6 +79,12 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'submit'])
 
 const model = ref(props.modelValue)
+const fileError = ref('')
+const form = ref({
+  title: '',
+  file: null,
+  favorite: false,
+})
 
 watch(
   () => props.modelValue,
@@ -81,11 +93,16 @@ watch(
 
 watch(model, (val) => emit('update:modelValue', val))
 
-let form = ref({
-  title: '',
-  file: null,
-  favorite: false,
-})
+watch(
+  () => form.value.file,
+  (file) => {
+    if (file) fileError.value = ''
+  },
+)
+
+function rejectFile() {
+  fileError.value = 'Maximum file size is 10 MB.'
+}
 
 function submit() {
   emit('submit', {
@@ -98,6 +115,8 @@ function submit() {
     file: null,
     favorite: false,
   }
+
+  fileError.value = ''
 
   model.value = false
 }

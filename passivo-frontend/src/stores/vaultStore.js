@@ -162,15 +162,15 @@ export const useVaultStore = defineStore('vault', () => {
   async function deleteItem(item) {
     try {
       if (item.type === 'password') {
-        api.delete(`/api/password/${item.id}`)
+        await api.delete(`/api/password/${item.id}`)
       }
 
       if (item.type === 'file') {
-        api.delete(`/api/file/${encodeURIComponent(item.key)}`)
+        await api.delete(`/api/drive/${encodeURIComponent(item.id)}`)
       }
 
-      if (item.type === 'notes') {
-        api.delete(`/api/notes/${item.id}`)
+      if (item.type === 'note') {
+        await api.delete(`/api/notes/${item.id}`)
       }
 
       items.value = items.value.filter((i) => i.id !== item.id)
@@ -287,6 +287,14 @@ export const useVaultStore = defineStore('vault', () => {
   async function addFileItem(payload) {
     await auth.restoreCryptoSession()
 
+    if (!payload.file) {
+      throw new Error('No file selected')
+    }
+
+    if (payload.file.size > 10 * 1024 * 1024) {
+      throw new Error('Maximum file size is 10 MB')
+    }
+
     const fileTypePlain = payload.file?.type || 'application/octet-stream'
 
     const title = await encryptData(payload.title || payload.file?.name, auth.publicKey)
@@ -372,7 +380,7 @@ export const useVaultStore = defineStore('vault', () => {
       }
 
       if (item.type === 'file') {
-        await api.patch(`/api/drive/${encodeURIComponent(item.key)}`, {
+        await api.patch(`/api/drive/${encodeURIComponent(item.id)}`, {
           favorite: item.favorite,
         })
       }
