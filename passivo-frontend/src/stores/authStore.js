@@ -38,6 +38,8 @@ const PRIVATE_KEY_DEVICE_KEY = 'privateKeyForDevice'
 
 const PRIVATE_KEY_IV_KEY = 'devicePrivateKeyIv'
 
+const SESSION_TOKEN_KEY = 'passivoSessionToken'
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const privateKey = ref(null)
@@ -45,13 +47,31 @@ export const useAuthStore = defineStore('auth', () => {
 
   let autoLockInterval = null
 
-  function setApiToken(token) {
+  function setApiToken(token, remember = false) {
+    sessionStorage.removeItem(SESSION_TOKEN_KEY)
+    localStorage.removeItem(SESSION_TOKEN_KEY)
+
     if (token) {
       api.defaults.headers.common.Authorization = `Bearer ${token}`
+
+      const storage = remember ? localStorage : sessionStorage
+      storage.setItem(SESSION_TOKEN_KEY, token)
+
       return
     }
 
     delete api.defaults.headers.common.Authorization
+  }
+
+  function restoreApiToken() {
+    const token = sessionStorage.getItem(SESSION_TOKEN_KEY) || localStorage.getItem(SESSION_TOKEN_KEY)
+
+    if (!token) {
+      return false
+    }
+
+    api.defaults.headers.common.Authorization = `Bearer ${token}`
+    return true
   }
 
   const userInitial = computed(() => {
@@ -129,6 +149,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function restoreCryptoSession() {
     try {
+      restoreApiToken()
+
       if (!publicKey.value || !privateKey.value) {
         const storage = getCryptoStorage()
 
@@ -241,7 +263,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Session token was not returned after signup')
       }
 
-      setApiToken(token)
+      setApiToken(token, false)
 
       user.value = res.data.data.user
 
@@ -302,7 +324,7 @@ export const useAuthStore = defineStore('auth', () => {
         remember,
       })
 
-      setApiToken(res.data.data.token)
+      setApiToken(res.data.data.token, remember)
 
       user.value = res.data.data.user
 
@@ -465,7 +487,7 @@ export const useAuthStore = defineStore('auth', () => {
       remember: isRememberMeEnabled(),
     })
 
-    setApiToken(loginRes.data.data.token)
+    setApiToken(loginRes.data.data.token, isRememberMeEnabled())
 
     return true
   }
