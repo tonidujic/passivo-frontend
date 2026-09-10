@@ -235,6 +235,14 @@ export const useAuthStore = defineStore('auth', () => {
 
       const res = await api.post('/api/auth/signup', signUpPayload)
 
+      const token = res.data.data.token
+
+      if (!token) {
+        throw new Error('Session token was not returned after signup')
+      }
+
+      setApiToken(token)
+
       user.value = res.data.data.user
 
       privateKey.value = keyPair.privateKey
